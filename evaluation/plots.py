@@ -54,10 +54,13 @@ class Visualizer:
         plt.close()
         logging.info("Correlation heatmap saved.")
         
-    def plot_network_topology(self, sample_size=200):
-        logging.info("Generating Network Topology Sub-Graph...")
-        df = pd.read_csv(self.data_path).head(sample_size)
-        
+    def plot_network_topology(self, sample_size=5000):
+        logging.info("Generating Large Network Topology Sub-Graph (This will take a moment)...")
+        df_full = pd.read_csv(self.data_path)
+        # Guarantee we pull fraudulent rings into the visualization!
+        legit = df_full[df_full['isMoneyLaundering'] == 0].sample(n=sample_size // 2, random_state=42)
+        illicit = df_full[df_full['isMoneyLaundering'] == 1].sample(n=sample_size // 2, random_state=42)
+        df = pd.concat([legit, illicit])
         G = nx.from_pandas_edgelist(
             df, source='nameOrig', target='nameDest', 
             edge_attr=['amount', 'isMoneyLaundering'], create_using=nx.DiGraph()
