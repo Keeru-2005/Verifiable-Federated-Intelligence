@@ -99,7 +99,7 @@ class Visualizer:
 if __name__ == "__main__":
     v = Visualizer(
         data_path="data/amlnet.csv", 
-        output_dir="images/"
+        output_dir="visualizations/"
     )
     # The try blocks prevent crashing if amlnet.csv isn't populated yet
     try:
