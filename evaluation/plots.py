@@ -5,7 +5,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import logging
-from sklearn.decomposition import PCA
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -101,42 +100,6 @@ class Visualizer:
         plt.savefig(os.path.join(self.output_dir, "convergence_curve.png"), dpi=300)
         plt.close()
         logging.info("Convergence plot saved.")
-        
-    def plot_pca_3d_clusters(self):
-        logging.info("Generating 3D PCA Cluster Projection...")
-        part_path = "data/processed_partition.csv"
-        if not os.path.exists(part_path):
-            logging.warning("processed_partition.csv not found! Run preprocess.py first.")
-            return
-            
-        df = pd.read_csv(part_path).head(5000) # Sampled for rendering speed
-        y = df['is_laundering']
-        X = df.drop('is_laundering', axis=1)
-        
-        pca_vis = PCA(n_components=3, random_state=42)
-        X_3d = pca_vis.fit_transform(X)
-        
-        fig = plt.figure(figsize=(10, 8))
-        ax = fig.add_subplot(111, projection='3d')
-        
-        ax.scatter(X_3d[y == 0, 0], X_3d[y == 0, 1], X_3d[y == 0, 2], 
-                   c='#3498db', marker='o', alpha=0.15, label='Legitimate')
-        
-        ax.scatter(X_3d[y == 1, 0], X_3d[y == 1, 1], X_3d[y == 1, 2], 
-                   c='#e74c3c', marker='x', alpha=1.0, s=80, label='Laundering')
-                   
-        ax.set_title("3D PCA Latent Space: Visualizing the SMOTE Manifold")
-        ax.set_xlabel("Principal Component 1")
-        ax.set_ylabel("Principal Component 2")
-        ax.set_zlabel("Principal Component 3")
-        
-        leg = ax.legend(loc='upper left')
-        for lh in leg.legend_handles: 
-            lh.set_alpha(1)
-            
-        plt.savefig(os.path.join(self.output_dir, "pca_3d_clusters.png"), dpi=300)
-        plt.close()
-        logging.info("3D PCA Cluster plot saved.")
 
 if __name__ == "__main__":
     v = Visualizer(
@@ -155,6 +118,5 @@ if __name__ == "__main__":
             'is_laundering'
         ])
         v.plot_network_topology()
-        v.plot_pca_3d_clusters()
     except Exception as e:
         logging.error(f"Could not generate plots. Ensure data exists. {e}")
