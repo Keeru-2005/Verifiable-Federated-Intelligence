@@ -12,7 +12,6 @@ data/*.pkl
 
 # Images and plots (Optional, but usually ignored)
 images/
-visualizations/
 
 # Secrets
 .env
