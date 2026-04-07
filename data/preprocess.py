@@ -6,9 +6,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from imblearn.over_sampling import SMOTE
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 import joblib
 import warnings
+
+# Import our topological extraction engine
+from graph_features import extract_features
 
 warnings.filterwarnings("ignore")
 
@@ -24,7 +26,6 @@ def plot_class_distribution(y, title, output_path):
     plt.figure(figsize=(8, 6))
     counts = pd.Series(y).value_counts()
     
-    # Safely retrieve counts, defaulting to 0 if an index doesn't exist
     count_0 = counts.get(0, 0)
     count_1 = counts.get(1, 0)
     
@@ -45,84 +46,100 @@ def main():
     data_path = os.path.join(base_dir, "amlnet.csv")
     
     # ---------------------------------------------------------
-    # 1. Load Data
+    # 1. Load Data & Rename for Graph Compatibility
     # ---------------------------------------------------------
     logging.info(f"Loading data from {data_path}...")
     if not os.path.exists(data_path):
-        logging.warning("AMLNet dataset not found. Generating a hypothetical chunk for demonstration.")
-        np.random.seed(42)
-        X_mock = np.random.rand(10000, 40)
-        y_mock = np.random.choice([0, 1], size=10000, p=[0.99, 0.01])
-        df = pd.DataFrame(X_mock, columns=[f"feature_{i}" for i in range(40)])
-        df['isMoneyLaundering'] = y_mock
+        raise FileNotFoundError("amlnet.csv not found!")
     else:
         df = pd.read_csv(data_path)
+        
+    # Standardize column names dynamically based on PaySim/AMLNet generic structures
+    rename_map = {
+        'nameOrig': 'sender',
+        'nameDest': 'receiver',
+        'step': 'timestamp',
+        'isMoneyLaundering': 'is_laundering'
+    }
+    df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns}, inplace=True)
     
-    # Isolate targets and numeric features
+    # Drop data leaking fallback targets to prevent ML cheating
+    leaky_cols = ['isFraud', 'fraud_probability', 'laundering_typology', 'isFlaggedFraud']
+    df.drop(columns=[col for col in leaky_cols if col in df.columns], inplace=True)
+    
+    # Mock a txn_id if absent
+    if 'txn_id' not in df.columns:
+        df['txn_id'] = range(len(df))
+        
+    # ---------------------------------------------------------
+    # 2. Extract Topological Graph Features (BEFORE dropping strings)
+    # ---------------------------------------------------------
+    logging.info("Extracting topological graphs from entire dataset. This may take several minutes...")
+    df = extract_features(df)
+    
+    # ---------------------------------------------------------
+    # 3. Strip Strings & Isolate Target
+    # ---------------------------------------------------------
+    # Now that we calculated PageRank using the strings, we safely strip them out!
     numeric_df = df.select_dtypes(include=[np.number]).copy()
     
-    if 'isMoneyLaundering' in numeric_df.columns:
-        X = numeric_df.drop('isMoneyLaundering', axis=1)
-        y = numeric_df['isMoneyLaundering']
+    if 'is_laundering' in numeric_df.columns:
+        X = numeric_df.drop(['is_laundering', 'txn_id', 'timestamp'], axis=1, errors='ignore')
+        y = numeric_df['is_laundering']
+        feature_names = X.columns
     else:
-        raise ValueError("Target column 'isMoneyLaundering' not found in numeric columns.")
+        raise ValueError("Target column 'is_laundering' not found.")
 
     X.fillna(0, inplace=True)
 
     # ---------------------------------------------------------
-    # 2. Data Visualization (BEFORE)
+    # 4. Data Visualization (BEFORE)
     # ---------------------------------------------------------
     logging.info("Generating Before-SMOTE visualization...")
     plot_class_distribution(y, "Class Imbalance (Before SMOTE)", os.path.join(viz_dir, "before_smote.png"))
     
     # ---------------------------------------------------------
-    # 3. Data Pre-processing: StandardScaler
+    # 5. Data Pre-processing: StandardScaler
     # ---------------------------------------------------------
     logging.info("Applying StandardScaler...")
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
     # ---------------------------------------------------------
-    # 4. Data Pre-processing: SMOTE
+    # 6. Data Pre-processing: SMOTE
     # ---------------------------------------------------------
     logging.info("Applying SMOTE (Targeting 30% minority ratio)...")
-    # For a 70/30 split, ratio = 30 / 70
     target_minority_ratio = 30 / 70
-    smote = SMOTE(sampling_strategy=target_minority_ratio, k_neighbors=5, random_state=42)
+    smote = SMOTE(sampling_strategy=target_minority_ratio, k_neighbors=3, random_state=42)
     X_resampled, y_resampled = smote.fit_resample(X_scaled, y)
     
     # ---------------------------------------------------------
-    # 5. Data Visualization (AFTER)
+    # 7. Data Visualization (AFTER)
     # ---------------------------------------------------------
     logging.info("Generating After-SMOTE visualization...")
     plot_class_distribution(y_resampled, "Class Balance (After SMOTE)", os.path.join(viz_dir, "after_smote.png"))
     
     # ---------------------------------------------------------
-    # 6. Data Pre-processing: PCA
+    # 8. Reconstruct Fully Interpretable DataFrame
     # ---------------------------------------------------------
-    logging.info("Applying PCA to reduce to 32 dimensions...")
-    n_components = min(32, X_resampled.shape[1])
-    pca = PCA(n_components=n_components, random_state=42)
-    X_pca = pca.fit_transform(X_resampled)
-    
-    processed_df = pd.DataFrame(X_pca, columns=[f"PC_{i+1}" for i in range(X_pca.shape[1])])
-    processed_df['isMoneyLaundering'] = y_resampled
+    logging.info(f"Reconstructing DataFrame fully preserving {len(feature_names)} readable features...")
+    processed_df = pd.DataFrame(X_resampled, columns=feature_names)
+    processed_df['is_laundering'] = y_resampled
     
     # ---------------------------------------------------------
-    # 7. Storage
+    # 9. Storage
     # ---------------------------------------------------------
     output_csv = os.path.join(base_dir, "processed_partition.csv")
     scaler_path = os.path.join(base_dir, "scaler.pkl")
-    pca_path = os.path.join(base_dir, "pca.pkl")
     
-    logging.info(f"Saving partitioned dataframe to {output_csv}...")
+    logging.info(f"Saving explicitly interpreted partitioned dataframe to {output_csv}...")
     processed_df.to_csv(output_csv, index=False)
     
-    logging.info("Saving Scaler and PCA objects via joblib...")
+    logging.info("Saving Scaler object via joblib...")
     joblib.dump(scaler, scaler_path)
-    joblib.dump(pca, pca_path)
+    # Notice: No PCA object saved!
     
-    logging.info("10% Implementation Pre-processing Complete!")
+    logging.info("Graph-Enhanced Pre-processing Complete!")
 
 if __name__ == "__main__":
     main()
