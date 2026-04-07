@@ -33,7 +33,12 @@ class Visualizer:
         
     def plot_correlation_heatmap(self, features):
         logging.info("Generating Correlation Heatmap...")
-        df = pd.read_csv(self.data_path)
+        # MUST read from processed to capture the NetworkX graph metrics!
+        processed_path = "data/processed_partition.csv"
+        if not os.path.exists(processed_path):
+            logging.warning("processed dataset not found for heatmap!")
+            return
+        df = pd.read_csv(processed_path)
         
         # Ensure we only correlate available numeric features
         existing_features = [f for f in features if f in df.columns]
