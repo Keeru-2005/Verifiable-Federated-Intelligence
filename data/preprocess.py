@@ -74,11 +74,7 @@ def main():
     # ---------------------------------------------------------
     # 2. Extract Topological Graph Features (BEFORE dropping strings)
     # ---------------------------------------------------------
-    # To save time in the demo, we take the first 50,000 txns to avoid massive graph buildup
-    if len(df) > 50000:
-        logging.info("Truncating to 50k transactions to keep computation times reasonable for the demo.")
-        df = df.head(50000)
-        
+    logging.info("Extracting topological graphs from entire dataset. This may take several minutes...")
     df = extract_features(df)
     
     # ---------------------------------------------------------

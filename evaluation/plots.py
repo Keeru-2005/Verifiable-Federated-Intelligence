@@ -105,8 +105,8 @@ class Visualizer:
             return
             
         df = pd.read_csv(part_path).head(5000) # Sampled for rendering speed
-        y = df['isMoneyLaundering']
-        X = df.drop('isMoneyLaundering', axis=1)
+        y = df['is_laundering']
+        X = df.drop('is_laundering', axis=1)
         
         pca_vis = PCA(n_components=3, random_state=42)
         X_3d = pca_vis.fit_transform(X)
