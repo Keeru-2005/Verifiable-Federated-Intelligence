@@ -1,0 +1,5 @@
+To run:
+  Give proper dataset path in split_into_banks.py and run the file
+  Open wsl in the project folder directory and run:
+    docker compose up --build
+  this will create 4 containers for the bank nodes(docker containers) and 1 server to aggregate the model updates to the global model.
