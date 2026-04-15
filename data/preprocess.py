@@ -148,6 +148,10 @@ def main():
         processed_df = pd.DataFrame(X_resampled, columns=feature_names)
         processed_df['is_laundering'] = y_resampled
         
+        # SMOTE appends synthetic samples at the end — shuffle to mix classes throughout
+        processed_df = processed_df.sample(frac=1, random_state=42).reset_index(drop=True)
+        logging.info(f"Shuffled dataset for {ratio_name} — class 0: {(processed_df['is_laundering']==0).sum()}, class 1: {(processed_df['is_laundering']==1).sum()}")
+        
         # ---------------------------------------------------------
         # 9. Storage
         # ---------------------------------------------------------
