@@ -8,7 +8,7 @@ This framework pioneers a trustless environment where disjointed financial netwo
 - A R Keerthana 
 - Ananya Lakshmi 
 - Kavan Reddy 
-- Likith Kumar 
+- Likhith Kumar 
 
 ## 🏛️ System Architecture
 
