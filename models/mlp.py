@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, f1_score, accuracy_score
 
 class GraphAwareMLP(nn.Module):
-    def __init__(self, input_dim=32):
+    def __init__(self, input_dim=7):
         super(GraphAwareMLP, self).__init__()
         
         # Ensures fixed random state for reproducibility per architecture rule

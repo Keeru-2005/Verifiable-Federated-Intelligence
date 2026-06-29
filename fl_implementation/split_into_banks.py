@@ -14,13 +14,16 @@ train_df, test_df = train_test_split(
 )
 
 # Save test set
-test_df.to_csv("global_test.csv", index=False)
+test_output_path = os.path.join(current_dir, "data", "global_test.csv")
+test_df.to_csv(test_output_path, index=False)
+print(f"Global Test Set: {len(test_df)} records saved to {test_output_path}")
 
 # Split train into 4 banks
 banks = np.array_split(train_df.sample(frac=1, random_state=42), 4)
 
 for i, bank in enumerate(banks):
-    bank.to_csv(f"bank_{i+1}.csv", index=False)
-    print(f"Bank {i+1}: {len(bank)} records")
+    bank_output_path = os.path.join(current_dir, "data", f"bank_{i+1}.csv")
+    bank.to_csv(bank_output_path, index=False)
+    print(f"Bank {i+1}: {len(bank)} records saved to {bank_output_path}")
 
 print("✅ Data split complete.")
