@@ -14,7 +14,24 @@ DATA_FILE = os.getenv("DATA_FILE")
 def load_data():
     df = pd.read_csv(DATA_FILE)
 
-    X = df.drop(columns=['is_laundering'])
+    # 7 optimized features selected to reduce parameter overhead & ZKP proving costs
+    features = [
+        'newbalanceOrig', 
+        'amount_log', 
+        'out_degree_sender', 
+        'pagerank_receiver', 
+        'out_degree_receiver', 
+        'clustering_coefficient_receiver', 
+        'betweenness_centrality_receiver'
+    ]
+    
+    # Check if all recommended features exist, otherwise fallback to taking all features
+    available_features = [f for f in features if f in df.columns]
+    if len(available_features) == len(features):
+        X = df[available_features]
+    else:
+        X = df.drop(columns=['is_laundering'], errors='ignore')
+        
     y = df['is_laundering']
 
     scaler = StandardScaler()
@@ -94,7 +111,12 @@ class AMLClient(fl.client.NumPyClient):
 
 
 if __name__ == "__main__":
+    # Check if running inside Docker container, fallback to localhost for local Mac testing
+    server_addr = os.getenv("SERVER_ADDRESS", "localhost:8080")
+    if os.path.exists("/.dockerenv") or os.environ.get("DATA_FILE", "").startswith("data/"):
+        server_addr = "server:8080"
+
     fl.client.start_numpy_client(
-        server_address="server:8080",
+        server_address=server_addr,
         client=AMLClient(),
     )
