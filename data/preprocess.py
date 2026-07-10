@@ -1,3 +1,4 @@
+import sys
 import os
 import logging
 import pandas as pd
@@ -11,8 +12,14 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 import warnings
 
-# Import our topological extraction engine
-from graph_features import extract_features
+# Add project root directory to path for imports
+base_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(base_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Import our topological extraction engine using workspace relative import
+from data.graph_features import extract_features
 
 warnings.filterwarnings("ignore")
 
@@ -101,11 +108,17 @@ def main():
     plot_class_distribution(y, "Class Imbalance (Before SMOTE)", os.path.join(viz_dir, "before_smote.png"))
     
     # ---------------------------------------------------------
-    # 5. Data Pre-processing: StandardScaler
+    # 5. Data Pre-processing: StandardScaler & PCA (32-dim)
     # ---------------------------------------------------------
     logging.info("Applying StandardScaler...")
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
+    
+    logging.info("Applying PCA (32 dimensions)...")
+    from sklearn.decomposition import PCA
+    pca = PCA(n_components=32, random_state=42)
+    X_pca = pca.fit_transform(X_scaled)
+    pca_columns = [f"pca_{i+1}" for i in range(32)]
     
     # ---------------------------------------------------------
     # 6. Data Pre-processing: SMOTE Variations
@@ -119,17 +132,22 @@ def main():
     best_ratio_name = "50_50" # Selecting 50:50 as the best dataset version for balanced representation
     
     for ratio_name, target_ratio in ratios.items():
-        logging.info(f"Applying Hybrid Balancing (UnderSampler to 500k + SMOTE target {ratio_name.replace('_', ':')})...")
-        
-        # Step 1: Reduce legitimate transactions to firmly 500,000. Retain all laundering data.
+        current_majority_count = int(sum(y == 0))
         current_minority_count = int(sum(y == 1))
-        under = RandomUnderSampler(sampling_strategy={0: 500000, 1: current_minority_count}, random_state=42)
         
         # Step 2: SMOTE the laundering transactions for the final leap to the target_ratio
         over = SMOTE(sampling_strategy=target_ratio, k_neighbors=3, random_state=42)
         
-        pipeline = Pipeline(steps=[('u', under), ('o', over)])
-        X_resampled, y_resampled = pipeline.fit_resample(X_scaled, y)
+        # Step 1: Reduce legitimate transactions to firmly 500,000 only if they exceed 500,000.
+        if current_majority_count > 500000:
+            logging.info(f"Applying Hybrid Balancing (UnderSampler to 500k + SMOTE target {ratio_name.replace('_', ':')})...")
+            under = RandomUnderSampler(sampling_strategy={0: 500000, 1: current_minority_count}, random_state=42)
+            pipeline = Pipeline(steps=[('u', under), ('o', over)])
+        else:
+            logging.info(f"Applying SMOTE only (majority size {current_majority_count} <= 500k, SMOTE target {ratio_name.replace('_', ':')})...")
+            pipeline = Pipeline(steps=[('o', over)])
+            
+        X_resampled, y_resampled = pipeline.fit_resample(X_pca, y)
         
         # ---------------------------------------------------------
         # 7. Data Visualization (AFTER)
@@ -145,7 +163,7 @@ def main():
         # 8. Reconstruct Fully Interpretable DataFrame
         # ---------------------------------------------------------
         logging.info(f"Reconstructing DataFrame preserving features for {ratio_name}...")
-        processed_df = pd.DataFrame(X_resampled, columns=feature_names)
+        processed_df = pd.DataFrame(X_resampled, columns=pca_columns)
         processed_df['is_laundering'] = y_resampled
         
         # SMOTE appends synthetic samples at the end — shuffle to mix classes throughout
@@ -168,6 +186,10 @@ def main():
     scaler_path = os.path.join(base_dir, "scaler.pkl")
     logging.info("Saving Scaler object via joblib...")
     joblib.dump(scaler, scaler_path)
+    
+    pca_path = os.path.join(base_dir, "pca.pkl")
+    logging.info("Saving PCA object via joblib...")
+    joblib.dump(pca, pca_path)
     # Notice: No PCA object saved!
     
     logging.info("Graph-Enhanced Pre-processing Complete!")
