@@ -1,6 +1,20 @@
 import flwr as fl
 import sys
 
+from flwr.common import parameters_to_ndarrays
+import json
+import os
+from datetime import datetime, timezone
+import torch
+# Add project root directory to path for models import
+server_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(server_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from models.mlp import GraphAwareMLP
+
+
 # Custom strategy subclassing FedAvg for server-side early stopping
 class EarlyStoppingFedAvg(fl.server.strategy.FedAvg):
     def __init__(self, patience=2, min_delta=0.0002, *args, **kwargs):
@@ -10,8 +24,53 @@ class EarlyStoppingFedAvg(fl.server.strategy.FedAvg):
         self.best_f1 = 0.0
         self.patience_counter = 0
 
+    def aggregate_fit(self, server_round, results, failures):
+        parameters_aggregated, metrics_aggregated = super().aggregate_fit(server_round, results, failures)
+        if parameters_aggregated is not None:
+            ndarrays = parameters_to_ndarrays(parameters_aggregated)
+            self.last_weights = [arr.tolist() for arr in ndarrays]
+            self.last_client_count = len(results)
+            
+            # Serialize the global model weights into PyTorch format (model.pt)
+            try:
+                model = GraphAwareMLP(input_dim=32)
+                model.set_parameters(ndarrays)
+                checkpoint_path = os.path.join(project_root, "fl_implementation", "model.pt")
+                torch.save(model.state_dict(), checkpoint_path)
+                print(f"💾 PyTorch model checkpoint saved successfully to {checkpoint_path}")
+            except Exception as e:
+                print(f"⚠️ Error saving model checkpoint: {e}")
+                
+        return parameters_aggregated, metrics_aggregated
+
     def aggregate_evaluate(self, server_round, results, failures):
         loss_aggregated, metrics_aggregated = super().aggregate_evaluate(server_round, results, failures)
+        
+        # Write the aggregated weights and metrics to json
+        if hasattr(self, 'last_weights'):
+            metrics_dict = metrics_aggregated if metrics_aggregated is not None else {}
+            export_data = {
+                "round": server_round,
+                "weights": self.last_weights,
+                "metrics": {
+                    "accuracy": metrics_dict.get("accuracy", 0.0),
+                    "precision": metrics_dict.get("precision", 0.0),
+                    "recall": metrics_dict.get("recall", 0.0),
+                    "f1": metrics_dict.get("f1", 0.0)
+                },
+                "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "client_count": getattr(self, 'last_client_count', 0)
+            }
+            
+            server_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(server_dir)
+            schemas_dir = os.path.join(project_root, "schemas")
+            os.makedirs(schemas_dir, exist_ok=True)
+            
+            export_path = os.path.join(schemas_dir, f"global_model_round_{server_round}.json")
+            with open(export_path, "w") as f:
+                json.dump(export_data, f, indent=2)
+            print(f"💾 Exported global model for round {server_round} to {export_path}")
         
         if metrics_aggregated is None:
             return loss_aggregated, metrics_aggregated

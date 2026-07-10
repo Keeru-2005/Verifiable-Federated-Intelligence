@@ -206,8 +206,8 @@ def extract_features(df):
         df = df[df['_edge_key'].apply(lambda e: e in kept_edges)].drop(columns=['_edge_key'])
         logging.info(f"Transactions after GAT pruning: {len(df)} (removed {before - len(df)})")
 
-    except ImportError:
-        logging.warning("GraphEncoder not found — skipping GAT.")
+    except Exception as e:
+        logging.warning(f"GraphEncoder GAT execution failed or not found ({e}) — skipping GAT.")
         node_features['gat_attention_score'] = 0.0
 
     # ── merge all features ──
