@@ -56,8 +56,8 @@ This framework pioneers a trustless environment where disjointed financial netwo
 2. **Dataset Federation (Phase 1):**
    ```bash
    python data/download_dataset.py
-   python data/partition.py
    python data/preprocess.py
+   python fl_implementation/split_into_banks.py
    ```
 
 3. **Federated Orchestration (Phase 2):**

@@ -7,6 +7,9 @@ services:
       dockerfile: docker/Dockerfile.fl_server
     ports:
       - "8080:8080"
+    volumes:
+      - ./schemas:/app/schemas
+      - ./fl_implementation:/app/fl_implementation
     networks:
       - federated_network
     healthcheck:
@@ -22,8 +25,9 @@ services:
     environment:
       - NODE_ID=1
       - SERVER_ADDRESS=fl_server:8080
+      - DATA_FILE=/app/data.csv
     volumes:
-      - ./data/partitions/bank_node_1.csv:/app/data.csv:ro
+      - ./fl_implementation/data/bank_1.csv:/app/data.csv:ro
     depends_on:
       - fl_server
     networks:
@@ -41,8 +45,9 @@ services:
     environment:
       - NODE_ID=2
       - SERVER_ADDRESS=fl_server:8080
+      - DATA_FILE=/app/data.csv
     volumes:
-      - ./data/partitions/bank_node_2.csv:/app/data.csv:ro
+      - ./fl_implementation/data/bank_2.csv:/app/data.csv:ro
     depends_on:
       - fl_server
     networks:
@@ -60,8 +65,9 @@ services:
     environment:
       - NODE_ID=3
       - SERVER_ADDRESS=fl_server:8080
+      - DATA_FILE=/app/data.csv
     volumes:
-      - ./data/partitions/bank_node_3.csv:/app/data.csv:ro
+      - ./fl_implementation/data/bank_3.csv:/app/data.csv:ro
     depends_on:
       - fl_server
     networks:
@@ -79,8 +85,9 @@ services:
     environment:
       - NODE_ID=4
       - SERVER_ADDRESS=fl_server:8080
+      - DATA_FILE=/app/data.csv
     volumes:
-      - ./data/partitions/bank_node_4.csv:/app/data.csv:ro
+      - ./fl_implementation/data/bank_4.csv:/app/data.csv:ro
     depends_on:
       - fl_server
     networks:

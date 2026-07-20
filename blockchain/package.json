@@ -1,0 +1,17 @@
+{
+  "name": "verifiable-federated-intelligence-blockchain",
+  "version": "1.0.0",
+  "description": "Blockchain layer for Verifiable Federated Intelligence",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "snarkjs": "^0.7.4"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.2"
+  }
+}
