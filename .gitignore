@@ -21,3 +21,9 @@ env/
 venv/
 .idea/
 .vscode/
+
+# Node.js and Hardhat
+node_modules/
+blockchain/node_modules/
+blockchain/artifacts/
+blockchain/cache/

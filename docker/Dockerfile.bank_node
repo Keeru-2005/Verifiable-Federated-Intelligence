@@ -1,0 +1,12 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install dependencies (including torch for PyTorch MLP)
+RUN pip install --no-cache-dir flwr pandas scikit-learn torch
+
+# Copy client code, dataset, and models
+COPY fl_implementation/client.py .
+COPY models/ ./models/
+
+CMD ["python", "client.py"]
