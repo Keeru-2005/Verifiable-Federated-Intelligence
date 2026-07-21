@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifiable Federated Intelligence - Bank Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo">
+      <div class="logo-icon">V</div>
+      <div class="logo-text">Verifiable Federated Intelligence</div>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-item active">Bank Admin View</a>
+      <a href="regulator.html" class="nav-item">Regulator View</a>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <div class="header-title">
+        <h1>Bank Admin Control Center</h1>
+        <p>Monitor decentralized Flower FL rounds, node health partitions, and trigger ZK audit logging.</p>
+      </div>
+      <div>
+        <button id="run-pipeline-btn" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Run E2E Pipeline
+        </button>
+      </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+      
+      <!-- Pipeline Execution Panel -->
+      <div class="glass-card col-4">
+        <div class="card-title">
+          <span>Execution Engine</span>
+          <span id="pipeline-status" class="status-badge idle">Idle</span>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div>
+            <label class="metric-label" style="display: block; margin-bottom: 6px;">Current Pipeline Task</label>
+            <div id="pipeline-step" style="font-weight: 600; color: var(--accent-cyan);">Ready to launch</div>
+          </div>
+          
+          <div>
+            <label class="metric-label" style="display: block; margin-bottom: 6px;">Execution Terminal Output</label>
+            <div id="console-logs" class="console-container">
+              <span class="console-line">SYSTEM: Standing by for pipeline launch.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Performance Chart -->
+      <div class="glass-card col-8">
+        <div class="card-title">
+          <span>Accuracy & Privacy Tradeoff Analysis</span>
+          <span class="metric-label">Centralized vs Federated</span>
+        </div>
+        
+        <div id="chart-container">
+          <div class="chart-placeholder" id="chart-placeholder">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20V14"></path></svg>
+            <span>Performance comparison chart will render after pipeline run completes.</span>
+          </div>
+          <img id="comparison-chart" src="" class="chart-img" style="display: none;" alt="Accuracy Comparison Chart">
+        </div>
+      </div>
+
+      <!-- Local Partition Health -->
+      <div class="glass-card col-6">
+        <div class="card-title">
+          <span>Bank Data Shard Distribution (Local Health)</span>
+          <div class="alert-indicator">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            No data drift detected
+          </div>
+        </div>
+        
+        <div class="partition-grid">
+          <div class="partition-card">
+            <div class="partition-name">Bank Node 1</div>
+            <div class="partition-stat">Records: <span class="partition-val">180,272</span></div>
+            <div class="partition-stat">Laundering: <span class="partition-val" style="color: var(--status-error);">0.85%</span></div>
+          </div>
+          <div class="partition-card">
+            <div class="partition-name">Bank Node 2</div>
+            <div class="partition-stat">Records: <span class="partition-val">180,272</span></div>
+            <div class="partition-stat">Laundering: <span class="partition-val" style="color: var(--status-error);">0.85%</span></div>
+          </div>
+          <div class="partition-card">
+            <div class="partition-name">Bank Node 3</div>
+            <div class="partition-stat">Records: <span class="partition-val">180,271</span></div>
+            <div class="partition-stat">Laundering: <span class="partition-val" style="color: var(--status-error);">0.85%</span></div>
+          </div>
+          <div class="partition-card">
+            <div class="partition-name">Bank Node 4</div>
+            <div class="partition-stat">Records: <span class="partition-val">180,271</span></div>
+            <div class="partition-stat">Laundering: <span class="partition-val" style="color: var(--status-error);">0.85%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Local Model Aggregate Summary -->
+      <div class="glass-card col-6">
+        <div class="card-title">
+          <span>Decentralized FL Metrics Progression</span>
+          <span class="metric-label">aggregated schemas</span>
+        </div>
+        
+        <div class="table-wrapper">
+          <table class="custom-table" id="rounds-table">
+            <thead>
+              <tr>
+                <th>Round</th>
+                <th>Accuracy</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                  No training rounds loaded. Trigger the E2E pipeline run to generate rounds.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

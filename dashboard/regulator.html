@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifiable Federated Intelligence - Regulator View</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo">
+      <div class="logo-icon">V</div>
+      <div class="logo-text">Verifiable Federated Intelligence</div>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-item">Bank Admin View</a>
+      <a href="regulator.html" class="nav-item active">Regulator View</a>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <div class="header-title">
+        <h1>Regulator Compliance Audit Ledger</h1>
+        <p>Immutable audit trail of ZK-verified federated learning model parameters fetched directly from the smart contract.</p>
+      </div>
+      <div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 10px 20px; border-radius: 10px; display: flex; align-items: center; gap: 12px;">
+          <div style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--status-success); box-shadow: 0 0 10px var(--status-success);"></div>
+          <span class="metric-label" style="font-weight: 600;">Ledger Sync Connected</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contract Status -->
+    <div class="glass-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+        <div>
+          <label class="metric-label">Contract Owner Address</label>
+          <div style="font-weight: 500; font-family: 'Courier New', Courier, monospace;" id="contract-deployer">-</div>
+        </div>
+        <div>
+          <label class="metric-label">Deployed Contract Address (Polygon Amoy Ledger)</label>
+          <div class="mono" id="contract-address">-</div>
+        </div>
+        <div>
+          <label class="metric-label">Verified Epochs Count</label>
+          <div style="font-family: var(--font-display); font-size: 24px; font-weight: 800; color: var(--accent-cyan);" id="contract-epochs-count">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table ledger list -->
+    <div class="glass-card">
+      <div class="card-title">
+        <span>Immutable Ledger Audit Logs</span>
+        <button class="btn-primary" id="refresh-ledger-btn" style="padding: 6px 14px; font-size: 13px; box-shadow: none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+          Sync Ledger
+        </button>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="custom-table" id="ledger-table">
+          <thead>
+            <tr>
+              <th>Round</th>
+              <th>Aggregation Weights Hash</th>
+              <th>Verified F1</th>
+              <th>Verified Acc</th>
+              <th>Clients</th>
+              <th>On-Chain Block Timestamp</th>
+              <th>ZK Circuit ID</th>
+              <th>Tx Hash Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 60px;">
+                No audit logs loaded. Sync ledger or run the pipeline training first.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
