@@ -1,13 +1,13 @@
 {
-  "name": "verifiable-federated-intelligence-dashboard",
+  "name": "vfi-dashboard",
   "version": "1.0.0",
-  "description": "Dashboard interface for Bank Admins and Regulators",
+  "description": "Verifiable Federated Intelligence Live Web Dashboard",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
-    "ethers": "^6.12.0"
+    "cors": "^2.8.5"
   }
 }
