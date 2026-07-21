@@ -1,38 +1,39 @@
-from sklearn.linear_model import LogisticRegression
-
 import flwr as fl
 import pandas as pd
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader, TensorDataset
 from sklearn.preprocessing import StandardScaler
-from sklearn.neural_network import MLPClassifier
-import os
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score
+import os
+import sys
 
+# Add project root to sys.path to import models
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from models.mlp import GraphAwareMLP
 
 DATA_FILE = os.getenv("DATA_FILE")
 
 def load_data():
+    if not DATA_FILE or not os.path.exists(DATA_FILE):
+        raise FileNotFoundError(f"Data file not found at {DATA_FILE}")
+        
     df = pd.read_csv(DATA_FILE)
 
-    # 7 optimized features selected to reduce parameter overhead & ZKP proving costs
-    features = [
-        'newbalanceOrig', 
-        'amount_log', 
-        'out_degree_sender', 
-        'pagerank_receiver', 
-        'out_degree_receiver', 
-        'clustering_coefficient_receiver', 
-        'betweenness_centrality_receiver'
-    ]
+    # Use all available numerical features
+    X = df.drop(columns=['is_laundering', 'sender', 'receiver', 'timestamp', 'nameOrig', 'nameDest', '_pk', '_edge_key'], errors='ignore')
     
-    # Check if all recommended features exist, otherwise fallback to taking all features
-    available_features = [f for f in features if f in df.columns]
-    if len(available_features) == len(features):
-        X = df[available_features]
-    else:
-        X = df.drop(columns=['is_laundering'], errors='ignore')
-        
-    y = df['is_laundering']
+    # Filter out non-numeric columns just in case
+    X = X.select_dtypes(include=[np.number])
+    
+    y = df['is_laundering'].values
 
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
@@ -44,77 +45,93 @@ class AMLClient(fl.client.NumPyClient):
     def __init__(self):
         self.X, self.y = load_data()
         
-
         X_train, X_test, y_train, y_test = train_test_split(
             self.X, self.y, test_size=0.2, random_state=42, stratify=self.y
         )
 
-        self.X_train = X_train
-        self.X_test = X_test
-        self.y_train = y_train
-        self.y_test = y_test
-        self.model = LogisticRegression(
-            penalty='l2',
-            solver='saga',        # IMPORTANT for large data
-            max_iter=1,           # match FL rounds
-            warm_start=True,      # reuse weights
-            n_jobs=-1,
-            random_state=42
-        )
-        # self.model.fit(self.X[:10], self.y[:10])  # init
-        # Ensure both classes present in init
-        init_idx = []
-        classes = set()
-
-        for i, label in enumerate(self.y):
-            if label not in classes:
-                init_idx.append(i)
-                classes.add(label)
-            if len(classes) == 2:
-                break
-
-        self.model.fit(self.X[init_idx], self.y[init_idx])
+        # Convert to PyTorch tensors
+        self.X_train = torch.tensor(X_train, dtype=torch.float32)
+        self.y_train = torch.tensor(y_train, dtype=torch.float32)
+        self.X_test = torch.tensor(X_test, dtype=torch.float32)
+        self.y_test = torch.tensor(y_test, dtype=torch.float32)
+        
+        self.train_dataset = TensorDataset(self.X_train, self.y_train)
+        self.test_dataset = TensorDataset(self.X_test, self.y_test)
+        
+        self.train_loader = DataLoader(self.train_dataset, batch_size=256, shuffle=True)
+        self.test_loader = DataLoader(self.test_dataset, batch_size=256, shuffle=False)
+        
+        self.input_dim = self.X_train.shape[1]
+        self.model = GraphAwareMLP(input_dim=self.input_dim)
+        
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
 
     def get_parameters(self, config):
-        return [self.model.coef_, self.model.intercept_]
+        return self.model.get_parameters()
 
     def set_parameters(self, parameters):
-        # n_layers = len(self.model.coefs_)
-        self.model.coef_ = parameters[0]
-        self.model.intercept_ = parameters[1]
+        self.model.set_parameters(parameters)
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        self.model.fit(self.X_train, self.y_train)
-        return self.get_parameters(config), len(self.X_train), {}
+        
+        criterion = nn.BCELoss()
+        optimizer = optim.Adam(self.model.parameters(), lr=0.001)
+        
+        self.model.train()
+        epochs = 1
+        for epoch in range(epochs):
+            for X_batch, y_batch in self.train_loader:
+                X_batch, y_batch = X_batch.to(self.device), y_batch.to(self.device)
+                
+                optimizer.zero_grad()
+                outputs = self.model(X_batch).squeeze()
+                
+                if outputs.dim() == 0:
+                    outputs = outputs.unsqueeze(0)
+                    
+                loss = criterion(outputs, y_batch)
+                loss.backward()
+                optimizer.step()
+                
+        return self.get_parameters(config), len(self.train_dataset), {}
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
         
+        criterion = nn.BCELoss()
+        avg_loss, auc, f1, acc = self.model.evaluate(self.test_loader, criterion, self.device)
+        
+        # We need precision and recall for the server logging.
+        # So we can manually compute it here from self.model predictions.
+        self.model.eval()
+        y_true = []
+        y_pred = []
+        with torch.no_grad():
+            for X_batch, y_batch in self.test_loader:
+                X_batch = X_batch.to(self.device)
+                outputs = self.model(X_batch).squeeze()
+                if outputs.dim() == 0:
+                    outputs = outputs.unsqueeze(0)
+                y_true.extend(y_batch.numpy())
+                y_pred.extend((outputs.cpu().numpy() > 0.5).astype(int))
+                
+        precision = precision_score(y_true, y_pred, zero_division=0)
+        recall = recall_score(y_true, y_pred, zero_division=0)
 
-        probs = self.model.predict_proba(self.X_test)[:, 1]
-        y_pred = (probs > 0.3).astype(int)
-
-        accuracy = self.model.score(self.X_test, self.y_test)
-        precision = precision_score(self.y_test, y_pred, zero_division=0)
-        recall = recall_score(self.y_test, y_pred, zero_division=0)
-        f1 = f1_score(self.y_test, y_pred, zero_division=0)
-
-        loss = 1 - accuracy
-
-        return loss, len(self.X_test), {
-            "accuracy": accuracy,
+        return avg_loss, len(self.test_dataset), {
+            "accuracy": acc,
             "precision": precision,
             "recall": recall,
-            "f1": f1
+            "f1": f1,
+            "auc": auc
         }
 
-
 if __name__ == "__main__":
-    # Check if running inside Docker container, fallback to localhost for local Mac testing
     server_addr = os.getenv("SERVER_ADDRESS", "localhost:8080")
     if os.path.exists("/.dockerenv") or os.environ.get("DATA_FILE", "").startswith("data/"):
-        server_addr = "server:8080"
+        server_addr = "fl_server:8080" # Make sure this matches docker-compose hostname!
 
     fl.client.start_numpy_client(
         server_address=server_addr,

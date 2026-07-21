@@ -13,7 +13,11 @@ scaler.pkl
 models/
 *.pt
 *.pth
-
+*.cmd
+*.ps1
+*.ts
+*.js
+*.map
 # Environment and IDE
 .env
 .venv
@@ -27,3 +31,10 @@ node_modules/
 blockchain/node_modules/
 blockchain/artifacts/
 blockchain/cache/
+
+zk_proof/node_modules/
+models/__pycache__/
+fl_implementation/__pycache__/
+contracts_project/node_modules/
+zk_proof/node_modules/
+schemas/

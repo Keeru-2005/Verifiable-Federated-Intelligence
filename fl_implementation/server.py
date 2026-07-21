@@ -33,7 +33,9 @@ class EarlyStoppingFedAvg(fl.server.strategy.FedAvg):
             
             # Serialize the global model weights into PyTorch format (model.pt)
             try:
-                model = GraphAwareMLP(input_dim=32)
+                # ndarrays[0] is the weight matrix for the first linear layer, shape (128, input_dim)
+                in_dim = ndarrays[0].shape[1]
+                model = GraphAwareMLP(input_dim=in_dim)
                 model.set_parameters(ndarrays)
                 checkpoint_path = os.path.join(project_root, "fl_implementation", "model.pt")
                 torch.save(model.state_dict(), checkpoint_path)
@@ -95,7 +97,7 @@ class EarlyStoppingFedAvg(fl.server.strategy.FedAvg):
         return loss_aggregated, metrics_aggregated
 
 if __name__ == "__main__":
-    print("🚀 Starting FL Server...")
+    print("Starting FL Server...")
     # 🔹 Custom metric aggregation function
     def weighted_average(metrics):
         total_examples = sum(num_examples for num_examples, _ in metrics)
