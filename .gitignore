@@ -26,6 +26,12 @@ venv/
 .idea/
 .vscode/
 
+# Node.js and Hardhat
+node_modules/
+blockchain/node_modules/
+blockchain/artifacts/
+blockchain/cache/
+
 zk_proof/node_modules/
 models/__pycache__/
 fl_implementation/__pycache__/
