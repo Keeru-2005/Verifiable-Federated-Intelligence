@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir flwr pandas numpy scikit-learn torch
+
+COPY fl_implementation/client.py fl_implementation/client.py
+COPY models/ models/
+
+ENV PYTHONPATH=/app
+CMD ["python", "fl_implementation/client.py"]
