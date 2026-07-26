@@ -17,6 +17,10 @@ models/
 *.ps1
 *.ts
 *.js
+# Allow specific JS files (Likith's Week 3 deliverables)
+!coordinate.js
+!dashboard/app.js
+!blockchain/scripts/submit_proof.js
 *.map
 # Environment and IDE
 .env
