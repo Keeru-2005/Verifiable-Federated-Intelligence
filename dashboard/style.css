@@ -477,3 +477,47 @@ h1, h2, h3, h4 {
   gap: 10px;
   font-weight: 500;
 }
+
+/* Premium Animations and Hover Effects */
+@keyframes fadeInSlide {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glowPulse {
+  0% { box-shadow: 0 0 5px var(--accent-cyan); }
+  50% { box-shadow: 0 0 15px var(--accent-cyan), 0 0 5px var(--accent-blue); }
+  100% { box-shadow: 0 0 5px var(--accent-cyan); }
+}
+
+.glass-card {
+  animation: fadeInSlide 0.6s ease-out forwards;
+}
+
+.glass-card:nth-child(1) { animation-delay: 0.1s; }
+.glass-card:nth-child(2) { animation-delay: 0.2s; }
+.glass-card:nth-child(3) { animation-delay: 0.3s; }
+
+.custom-table tbody tr {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.custom-table tbody tr:hover {
+  transform: scale(1.01) translateX(5px);
+  background: rgba(0, 242, 254, 0.08) !important;
+  box-shadow: -4px 0 0 var(--accent-cyan);
+}
+
+.metric-box {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.metric-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 242, 254, 0.15);
+  border-color: rgba(0, 242, 254, 0.4);
+}
+
+.logo-icon {
+  animation: glowPulse 3s infinite;
+}

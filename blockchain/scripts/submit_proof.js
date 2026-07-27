@@ -37,8 +37,8 @@ async function main() {
   // 5. Parse and format parameters
   const a = proofData.proof.pi_a.slice(0, 2);
   const b = [
-    proofData.proof.pi_b[0],
-    proofData.proof.pi_b[1]
+    [proofData.proof.pi_b[0][1], proofData.proof.pi_b[0][0]],
+    [proofData.proof.pi_b[1][1], proofData.proof.pi_b[1][0]]
   ];
   const c = proofData.proof.pi_c.slice(0, 2);
   const input = proofData.publicSignals;
