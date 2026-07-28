@@ -1,0 +1,18 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+COPY dashboard/package*.json ./dashboard/
+RUN cd dashboard && npm install --production
+
+COPY dashboard/ ./dashboard/
+COPY schemas/ ./schemas/
+COPY blockchain/ ./blockchain/
+
+WORKDIR /app/dashboard
+
+EXPOSE 3000
+
+ENV PORT=3000
+
+CMD ["node", "server.js"]
