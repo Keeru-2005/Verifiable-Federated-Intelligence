@@ -2,6 +2,14 @@
 
 This directory is designated for the zero-knowledge circuit definition (`aml_verify.circom`) and compilation outputs. 
 
+## 🎯 Circuit Scope
+> [!IMPORTANT]
+> The `aml_verify.circom` circuit **proves correct aggregation arithmetic** across the participating bank nodes.
+> It verifies that the global model is the correct sample-count-weighted average of the submitted private weight vectors.
+> 
+> **What it does NOT prove:**
+> * It does not prove that the banks didn't lie about their raw data.
+> * It does not prove that local training was performed perfectly or securely.
 ## 🛠️ Tasks for Likith & Keerthana
 
 ### 1. Circuit Scaffolding (`aml_verify.circom`)
