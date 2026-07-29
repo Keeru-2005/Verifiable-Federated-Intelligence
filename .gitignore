@@ -1,3 +1,9 @@
+# OS files
+.DS_Store
+
+# Binaries
+*.exe
+
 # Ignore massive datasets to prevent GitHub push rejections!
 data/*.csv
 *.csv
@@ -10,7 +16,6 @@ __pycache__/
 # Models and joblib assets
 scaler.pkl
 *.pkl
-models/
 *.pt
 *.pth
 *.cmd
@@ -21,7 +26,19 @@ models/
 !coordinate.js
 !dashboard/app.js
 !blockchain/scripts/submit_proof.js
+!blockchain/scripts/deploy.js
+!blockchain/api_server.js
+!blockchain/hardhat.config.js
+!blockchain/test/AMLVerifier.test.js
+!zkp/verify_proof.js
 *.map
+
+# Allow model source files (not binary weights)
+!models/
+models/*.pt
+models/*.pth
+models/__pycache__/
+
 # Environment and IDE
 .env
 .venv
@@ -37,7 +54,6 @@ blockchain/artifacts/
 blockchain/cache/
 
 zk_proof/node_modules/
-models/__pycache__/
 fl_implementation/__pycache__/
 contracts_project/node_modules/
 zk_proof/node_modules/
