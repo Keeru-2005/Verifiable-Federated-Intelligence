@@ -22,15 +22,20 @@ scaler.pkl
 *.ps1
 *.ts
 *.js
-# Allow specific JS files (Likith's Week 3 deliverables)
+# Allow specific JS files (Deliverables)
+!orchestrate.js
 !coordinate.js
 !dashboard/app.js
+!dashboard/server.js
+!dashboard/public/regulator.js
 !blockchain/scripts/submit_proof.js
 !blockchain/scripts/deploy.js
+!blockchain/scripts/coordinate.js
 !blockchain/api_server.js
 !blockchain/hardhat.config.js
 !blockchain/test/AMLVerifier.test.js
 !zkp/verify_proof.js
+!zkp/circuit/generate_circuit_input.js
 *.map
 
 # Allow model source files (not binary weights)

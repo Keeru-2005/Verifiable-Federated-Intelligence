@@ -30,9 +30,30 @@ async function main() {
   const modelData = JSON.parse(fs.readFileSync(modelPath));
   console.log(`Model metadata loaded for round ${roundNumber}.`);
 
-  // 4. Connect to the AMLVerifier contract
+  // 4. Connect to the AMLVerifier contract (auto-deploying if current network has no bytecode)
+  let contractAddress = deployedAddresses.AMLVerifier;
+  const code = await ethers.provider.getCode(contractAddress);
+  if (code === "0x" || code === "0x0") {
+    console.log("💡 Contract not found at address on this network. Deploying fresh contracts...");
+    const Groth16VerifierFactory = await ethers.getContractFactory("Groth16Verifier");
+    const verifierInst = await Groth16VerifierFactory.deploy();
+    await verifierInst.waitForDeployment();
+    const verifierAddr = await verifierInst.getAddress();
+
+    const AMLVerifierFactory = await ethers.getContractFactory("AMLVerifier");
+    const amlInst = await AMLVerifierFactory.deploy(verifierAddr);
+    await amlInst.waitForDeployment();
+    contractAddress = await amlInst.getAddress();
+    console.log(`Deployed Groth16Verifier to ${verifierAddr} and AMLVerifier to ${contractAddress}`);
+
+    // Update deployed_addresses.json
+    deployedAddresses.Groth16Verifier = verifierAddr;
+    deployedAddresses.AMLVerifier = contractAddress;
+    fs.writeFileSync(deployedAddressesPath, JSON.stringify(deployedAddresses, null, 2));
+  }
+
   const AMLVerifier = await ethers.getContractFactory("AMLVerifier");
-  const amlVerifier = AMLVerifier.attach(deployedAddresses.AMLVerifier);
+  const amlVerifier = AMLVerifier.attach(contractAddress);
 
   // 5. Parse and format parameters
   const a = proofData.proof.pi_a.slice(0, 2);
