@@ -2,10 +2,14 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir flwr pandas numpy scikit-learn torch
+RUN pip install --no-cache-dir --default-timeout=100 torch --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir --default-timeout=100 flwr pandas numpy scikit-learn
 
-COPY fl_implementation/client.py fl_implementation/client.py
+COPY fl_implementation/ fl_implementation/
 COPY models/ models/
 
 ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=utf-8
+
 CMD ["python", "fl_implementation/client.py"]

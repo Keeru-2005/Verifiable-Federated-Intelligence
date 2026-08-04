@@ -22,6 +22,7 @@ contract AMLVerifier {
 
     // Mapping from round number to details
     mapping(uint256 => AMLRound) public rounds;
+    mapping(uint256 => bool) public isRoundVerified;
     uint256[] public roundNumbers;
 
     event RoundVerified(
@@ -37,6 +38,17 @@ contract AMLVerifier {
         address indexed submitter
     );
 
+    event InvalidProof(
+        uint256 indexed roundNumber,
+        address indexed submitter,
+        string reason
+    );
+
+    event ProofRejected(
+        uint256 indexed roundNumber,
+        address indexed submitter
+    );
+
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can perform this action");
         _;
@@ -48,21 +60,15 @@ contract AMLVerifier {
         owner = msg.sender;
     }
 
-    /**
-     * @notice Verify a federated learning round using ZK proof and log results to on-chain ledger.
-     * @param a zk-SNARK Groth16 proof parameter A
-     * @param b zk-SNARK Groth16 proof parameter B
-     * @param c zk-SNARK Groth16 proof parameter C
-     * @param input Public signals from the ZK proof
-     * @param roundNumber Federated learning round index
-     * @param modelWeightsHash Hash of the global model weights JSON
-     * @param accuracy Model accuracy metric scaled by 10000
-     * @param precision Model precision metric scaled by 10000
-     * @param recall Model recall metric scaled by 10000
-     * @param f1 Model F1-score metric scaled by 10000
-     * @param clientCount Number of active clients involved in aggregation
-     * @param circuitHash IPFS/Git identifier of the verified circuit configuration
-     */
+    function verifyOnly(
+        uint[2] calldata a,
+        uint[2][2] calldata b,
+        uint[2] calldata c,
+        uint[3] calldata input
+    ) external view returns (bool) {
+        return verifierContract.verifyProof(a, b, c, input);
+    }
+
     function verifyAndRecordRound(
         uint[2] calldata a,
         uint[2][2] calldata b,
@@ -81,10 +87,8 @@ contract AMLVerifier {
         bool isProofValid = verifierContract.verifyProof(a, b, c, input);
         require(isProofValid, "Cryptographic zk-SNARK verification failed");
 
-        // 2. Ensure round is not already recorded (or allow updating but log updates)
         require(rounds[roundNumber].timestamp == 0, "Round details already finalized on-chain");
 
-        // 3. Create ledger entry
         rounds[roundNumber] = AMLRound({
             roundNumber: roundNumber,
             modelWeightsHash: modelWeightsHash,
@@ -98,9 +102,9 @@ contract AMLVerifier {
             submitter: msg.sender
         });
 
+        isRoundVerified[roundNumber] = true;
         roundNumbers.push(roundNumber);
 
-        // 4. Emit event for logging and frontend updates
         emit RoundVerified(
             roundNumber,
             modelWeightsHash,
@@ -117,17 +121,22 @@ contract AMLVerifier {
         return true;
     }
 
-    /**
-     * @notice Get all recorded round numbers.
-     */
     function getRoundNumbers() external view returns (uint256[] memory) {
         return roundNumbers;
     }
 
-    /**
-     * @notice Get total number of recorded rounds.
-     */
     function getRoundsCount() external view returns (uint256) {
         return roundNumbers.length;
+    }
+
+    function getLatestRound() external view returns (AMLRound memory) {
+        require(roundNumbers.length > 0, "No rounds verified yet");
+        uint256 latestRoundNumber = roundNumbers[roundNumbers.length - 1];
+        return rounds[latestRoundNumber];
+    }
+
+    function getLedgerEntry(uint256 roundNumber) external view returns (AMLRound memory) {
+        require(isRoundVerified[roundNumber], "Round not verified");
+        return rounds[roundNumber];
     }
 }

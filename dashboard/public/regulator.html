@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regulator Compliance Dashboard - Verifiable Federated Intelligence</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navbar -->
+        <header class="navbar">
+            <div class="brand">
+                <div class="logo-icon">📜</div>
+                <div>
+                    <h1>Regulator Compliance & Audit Portal</h1>
+                    <p class="subtitle">Immutable On-Chain Zero-Knowledge Verification Ledger</p>
+                </div>
+            </div>
+            <div class="status-badge" id="regulatorStatusBadge">
+                <span class="pulse-dot"></span>
+                <span id="regulatorStatusText">Live Audit Active</span>
+            </div>
+        </header>
+
+        <!-- Main Navigation Tabs -->
+        <nav class="tab-nav">
+            <a href="index.html" class="tab-btn">
+                🏦 Bank Admin View
+            </a>
+            <a href="regulator.html" class="tab-btn active">
+                📜 Regulator View (Polygon Amoy)
+            </a>
+        </nav>
+
+        <!-- Regulator Dashboard Main Content -->
+        <main class="view-panel active">
+            <!-- Hero Banner -->
+            <div class="regulator-hero card">
+                <div>
+                    <h2>⛓️ On-Chain Cryptographic Verification Ledger</h2>
+                    <p class="subtitle" style="margin-top: 6px;">Verifiable, zero-knowledge audit trail published to Polygon Amoy Testnet.</p>
+                </div>
+                <div class="verified-badge-large">
+                    ✔ ZK-SNARK VERIFIED & RECORDED ON-CHAIN
+                </div>
+            </div>
+
+            <!-- Top Summary Metrics Cards -->
+            <div class="metrics-grid">
+                <div class="card metric-card">
+                    <span class="card-label">Verified FL Rounds</span>
+                    <h2 id="totalRounds">0</h2>
+                    <span class="trend-up">Immutable Audit Logs</span>
+                </div>
+
+                <div class="card metric-card">
+                    <span class="card-label">Global Model F1 Score</span>
+                    <h2 id="latestF1">0.0000</h2>
+                    <span class="badge-success">Compliance Target Exceeded</span>
+                </div>
+
+                <div class="card metric-card">
+                    <span class="card-label">Global Model Accuracy</span>
+                    <h2 id="latestAccuracy">0.00%</h2>
+                    <span class="trend-up">Zero False-Positives Goal</span>
+                </div>
+
+                <div class="card metric-card">
+                    <span class="card-label">Target Network</span>
+                    <h2 id="networkName">Polygon Amoy</h2>
+                    <span class="badge-success">Contract Verified</span>
+                </div>
+            </div>
+
+            <!-- ZK & Blockchain Cards -->
+            <div class="content-grid" style="margin-bottom: 24px;">
+                <!-- ZK Proof Details -->
+                <div class="card">
+                    <h3>🔒 Zero-Knowledge Proof (Groth16)</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Proof Protocol:</span>
+                        <span class="detail-value" id="zkProtocol">groth16 (bn128)</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Verified Round:</span>
+                        <span class="detail-value" id="zkRound">Round 10</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Circuit Hash:</span>
+                        <span class="detail-value monospace" id="zkCircuitHash">0x8f9c2d1b7a...3e4f</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Verification Status:</span>
+                        <span class="badge-success" id="zkVerificationBadge">Cryptographically Valid</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Audit Engine:</span>
+                        <span class="detail-value">Poseidon SNARK Circuit</span>
+                    </div>
+                </div>
+
+                <!-- Blockchain Transaction Details -->
+                <div class="card">
+                    <h3>🔗 Polygon Amoy Smart Contract</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Network:</span>
+                        <span class="detail-value" id="bcNetwork">Polygon Amoy Testnet</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Smart Contract Address:</span>
+                        <span class="detail-value monospace" id="bcContract">0x5a174503a0f788...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Latest Transaction Hash:</span>
+                        <span class="detail-value monospace" id="bcTxHash">0x547100bcbf2b6...</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Latest Block Number:</span>
+                        <span class="detail-value" id="bcBlock">15343615</span>
+                    </div>
+                    <div class="action-box">
+                        <a id="explorerLink" href="https://amoy.polygonscan.com" target="_blank" class="btn-polygon">
+                            ↗️ View Verified Contract on PolygonScan
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ledger History Table Card -->
+            <div class="card">
+                <h3>📜 Historical Audited Ledger Entries</h3>
+                <p class="subtitle" style="margin-top: 4px; margin-bottom: 16px;">
+                    Immutable round-by-round ledger records verified via zero-knowledge proof checks.
+                </p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Round</th>
+                                <th>Model Weights Hash</th>
+                                <th>F1 Score</th>
+                                <th>Accuracy</th>
+                                <th>Block #</th>
+                                <th>Timestamp</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerTableBody">
+                            <tr>
+                                <td colspan="8" class="text-center">Loading ledger history...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="regulator.js"></script>
+</body>
+</html>
