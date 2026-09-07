@@ -1,0 +1,30 @@
+{
+  "name": "verifiable-federated-intelligence",
+  "version": "1.0.0",
+  "description": "Verifiable Federated Intelligence (VFI) — Decentralized, Privacy-Preserving AML Intelligence with ZKPs & On-Chain Auditability",
+  "main": "demo/run_demo.js",
+  "scripts": {
+    "demo": "node demo/run_demo.js",
+    "demo:live": "node demo/run_demo.js --live-fl",
+    "orchestrate": "node orchestrate.js",
+    "dashboard": "cd dashboard && npm start",
+    "blockchain:deploy": "cd blockchain && npx hardhat run scripts/deploy.js",
+    "blockchain:submit": "cd blockchain && npx hardhat run scripts/submit_proof.js",
+    "zk:verify": "node zkp/verify_proof.js",
+    "zk:input": "node zkp/circuit/generate_circuit_input.js clients.json 1",
+    "test:stress": "python3 evaluation/stress_test.py",
+    "test:graph": "python3 fl_implementation/test_graph_integration.py",
+    "metrics": "python3 evaluation/benchmark_metrics.py"
+  },
+  "keywords": [
+    "federated-learning",
+    "zero-knowledge-proofs",
+    "blockchain",
+    "anti-money-laundering",
+    "zk-snark",
+    "flower",
+    "polygon"
+  ],
+  "author": "Capstone Team #42",
+  "license": "MIT"
+}

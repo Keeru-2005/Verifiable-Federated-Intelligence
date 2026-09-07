@@ -12,7 +12,7 @@ def collect_metrics():
 
     rounds = []
     if os.path.exists(SCHEMAS_DIR):
-        files = [f for f in os.listdir(SCHEMAS_DIR) if f.startswith("global_model_round_") and f.endsWith(".json")]
+        files = [f for f in os.listdir(SCHEMAS_DIR) if f.startswith("global_model_round_") and f.endswith(".json")]
         files.sort(key=lambda x: int(x.replace("global_model_round_", "").replace(".json", "")) if x.replace("global_model_round_", "").replace(".json", "").isdigit() else 0)
 
         for f in files:

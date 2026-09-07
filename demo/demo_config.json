@@ -1,0 +1,39 @@
+{
+  "projectName": "Verifiable Federated Intelligence (VFI)",
+  "version": "Phase 3 Review Demo",
+  "data": {
+    "bankCount": 4,
+    "shards": [
+      "fl_implementation/data/bank_1.csv",
+      "fl_implementation/data/bank_2.csv",
+      "fl_implementation/data/bank_3.csv",
+      "fl_implementation/data/bank_4.csv"
+    ],
+    "globalTest": "fl_implementation/data/global_test.csv"
+  },
+  "federatedLearning": {
+    "totalRounds": 10,
+    "strategy": "EarlyStoppingFedAvg",
+    "model": "GraphAwareMLP",
+    "minClients": 4,
+    "serverAddress": "localhost:8080"
+  },
+  "zeroKnowledge": {
+    "circuit": "zkp/circuit/aml_verify.circom",
+    "protocol": "Groth16",
+    "curve": "bn128",
+    "hashFunction": "Poseidon",
+    "targetRound": 1
+  },
+  "blockchain": {
+    "network": "Polygon Amoy Testnet (ChainID: 80002)",
+    "localFallback": "Hardhat In-Memory Network",
+    "contract": "AMLVerifier.sol",
+    "verifierContract": "Groth16Verifier.sol"
+  },
+  "dashboard": {
+    "port": 3000,
+    "url": "http://localhost:3000",
+    "regulatorUrl": "http://localhost:3000/regulator.html"
+  }
+}

@@ -38,6 +38,46 @@
 
     <!-- Dashboard Grid -->
     <div class="dashboard-grid">
+
+      <!-- CURRENT PHASE 3 STATUS CARD -->
+      <div class="glass-card col-12" style="border-left: 4px solid var(--accent-cyan); background: linear-gradient(135deg, rgba(10, 15, 36, 0.85), rgba(18, 24, 58, 0.7));">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+              <span class="status-badge" style="background: rgba(0, 242, 254, 0.15); color: var(--accent-cyan); border: 1px solid rgba(0, 242, 254, 0.4); font-weight: 700; font-size: 11px; letter-spacing: 0.8px; padding: 4px 10px; border-radius: 6px;">PHASE 3 PROGRESS REVIEW</span>
+              <strong style="color: var(--text-primary); font-size: 15px;">Current System Architecture Status</strong>
+            </div>
+            <p style="margin: 0; color: var(--text-secondary); font-size: 13px; max-width: 620px; line-height: 1.5;">
+              The core VFI pipeline is operational, while on-chain ZKP verification, GNN scaling, differential privacy and production-level enhancements remain under development.
+            </p>
+          </div>
+          <div style="display: flex; gap: 32px; flex-wrap: wrap; font-size: 13px;">
+            <div style="min-width: 220px;">
+              <div style="color: var(--status-success); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>✓</span> Core Pipeline (Operational)
+              </div>
+              <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.7;">
+                <li>✓ Federated AML Training (Flower)</li>
+                <li>✓ ZK Proof Generation (Circom/Groth16)</li>
+                <li>✓ Local Proof Verification</li>
+                <li>✓ Blockchain Logging (Polygon Amoy)</li>
+                <li>✓ Monitoring Dashboard</li>
+              </ul>
+            </div>
+            <div style="min-width: 220px;">
+              <div style="color: var(--status-warning); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span>•</span> Under Development (Phase 3)
+              </div>
+              <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.7;">
+                <li>• On-Chain ZK Verification</li>
+                <li>• Non-IID GNN Scaling (GATv2)</li>
+                <li>• Differential Privacy (DP-SGD)</li>
+                <li>• Production Security & Auth</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
       
       <!-- Pipeline Execution Panel -->
       <div class="glass-card col-4">
