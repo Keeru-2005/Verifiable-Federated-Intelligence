@@ -1,6 +1,6 @@
 @echo off
 REM ==============================================================================
-REM VFI Phase 3 Review Demo Execution Script (Windows)
+REM VFI 80% Milestone Review Demo Execution Script (Windows)
 REM ==============================================================================
 
 cd /d "%~dp0\.."

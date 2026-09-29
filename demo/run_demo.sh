@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ==============================================================================
-# VFI Phase 3 Review Demo Execution Script
+# VFI 80% Milestone Review Demo Execution Script
 # ==============================================================================
 
 set -e

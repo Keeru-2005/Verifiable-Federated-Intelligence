@@ -1,6 +1,8 @@
 {
   "projectName": "Verifiable Federated Intelligence (VFI)",
-  "version": "Phase 3 Review Demo",
+  "version": "80% Milestone Review Demo",
+  "completionPercentage": 80,
+  "milestone": "80% Implementation Review",
   "data": {
     "bankCount": 4,
     "shards": [
