@@ -39,13 +39,19 @@ function main() {
   const totalSamples = clientCounts.reduce((a, b) => a + b, 0);
 
   const input = {
-    roundNumber: roundArg,
+    roundNumber: roundArg.toString(),
     totalSamples: totalSamples.toString(),
     clientCounts: clientCounts.map(String),
     clientWeights: clientWeights.map((row) => row.map(encode)),
   };
 
-  fs.writeFileSync("input.json", JSON.stringify(input, null, 2));
+  const path = require("path");
+  const circuitDir = __dirname;
+  const projectRoot = path.join(circuitDir, "../..");
+  
+  fs.writeFileSync(path.join(circuitDir, "input.json"), JSON.stringify(input, null, 2));
+  fs.writeFileSync(path.join(projectRoot, "input.json"), JSON.stringify(input, null, 2));
+  
   console.log(
     `Wrote input.json: ${numClients} clients, ${numParams} params/client, ` +
     `totalSamples=${totalSamples}, round=${roundArg}`

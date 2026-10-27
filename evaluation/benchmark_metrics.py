@@ -7,7 +7,7 @@ SCHEMAS_DIR = os.path.join(PROJECT_ROOT, "schemas")
 
 def collect_metrics():
     print("=================================================");
-    print("📊 BENCHMARK METRICS SUMMARY & EVALUATION");
+    print("[METRICS] BENCHMARK METRICS SUMMARY & EVALUATION");
     print("=================================================");
 
     rounds = []
@@ -40,12 +40,12 @@ def collect_metrics():
     proof_path = os.path.join(SCHEMAS_DIR, "proof.json")
     proof_exists = os.path.exists(proof_path)
     
-    print("\n🔒 Zero-Knowledge Proof Performance:")
+    print("\n[SECURE] Zero-Knowledge Proof Performance:")
     print(f"  - Circuit Type           : Groth16 (Poseidon Hash over quantized weights)")
     print(f"  - Proof Status           : {'Generated & Verified' if proof_exists else 'Pending'}")
     print(f"  - Avg Proof Gen Duration : ~3.52 seconds")
 
-    print("\n⛓️ Blockchain (Polygon Amoy Testnet) Performance:")
+    print("\n[CHAIN]️ Blockchain (Polygon Amoy Testnet) Performance:")
     print(f"  - Contract               : GlobalAMLLedger / AMLVerifier")
     print(f"  - Verification Function  : verifyAndRecordRound(...)")
     print(f"  - Est. Gas Consumption   : 245,820 Gas units")

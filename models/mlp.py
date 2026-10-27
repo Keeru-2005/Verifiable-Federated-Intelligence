@@ -42,8 +42,8 @@ class GraphAwareMLP(nn.Module):
         return x
 
     def get_parameters(self):
-        """Extracts parameters as a list of numpy arrays for Federated Learning Aggregation."""
-        return [val.cpu().numpy() for _, val in self.state_dict().items()]
+        """Extracts parameters as a list of independent numpy arrays for Federated Learning Aggregation."""
+        return [val.cpu().detach().numpy().copy() for _, val in self.state_dict().items()]
 
     def set_parameters(self, parameters):
         """Loads parameters from a list of numpy arrays received from FL Server."""

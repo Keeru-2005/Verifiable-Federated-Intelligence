@@ -26,10 +26,13 @@ def main():
 
     data_out_dir = os.path.join(current_dir, "data")
     os.makedirs(data_out_dir, exist_ok=True)
-
     test_output_path = os.path.join(data_out_dir, "global_test.csv")
-    test_df.to_csv(test_output_path, index=False)
-    logging.info(f"Global Test Set: {len(test_df)} records saved to {test_output_path}")
+
+    if not os.path.exists(test_output_path):
+        test_df.to_csv(test_output_path, index=False)
+        logging.info(f"Global Test Set: {len(test_df)} records saved to {test_output_path}")
+    else:
+        logging.info(f"Existing clean Global Test Set retained at {test_output_path}")
 
     # Partitioning train set into 4 shards
     num_nodes = 4
@@ -43,7 +46,7 @@ def main():
         pos_ratio = bank['is_laundering'].mean()
         logging.info(f"Bank Node {i}: {len(bank)} transactions. Saved to {out_path} | Distribution: {pos_ratio*100:.2f}% positive")
 
-    logging.info("✅ Canonical data split complete.")
+    logging.info("[SUCCESS] Canonical data split complete.")
 
 if __name__ == "__main__":
     main()

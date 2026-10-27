@@ -8,6 +8,10 @@
     "demo:live": "node demo/run_demo.js --live-fl",
     "orchestrate": "node orchestrate.js",
     "dashboard": "cd dashboard && npm start",
+    "test": "pytest tests/ -v && cd blockchain && npx hardhat test && cd .. && node tests/test_backend_api.js",
+    "test:python": "pytest tests/ -v",
+    "test:contracts": "cd blockchain && npx hardhat test",
+    "test:api": "node tests/test_backend_api.js",
     "blockchain:deploy": "cd blockchain && npx hardhat run scripts/deploy.js",
     "blockchain:submit": "cd blockchain && npx hardhat run scripts/submit_proof.js",
     "zk:verify": "node zkp/verify_proof.js",
@@ -26,5 +30,11 @@
     "polygon"
   ],
   "author": "Capstone Team #42",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "dotenv": "^18.0.9",
+    "ethers": "^6.17.0",
+    "snarkjs": "^0.7.6"
+  }
 }

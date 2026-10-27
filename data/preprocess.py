@@ -47,7 +47,16 @@ def plot_class_distribution(y, title, output_path):
     plt.savefig(output_path, dpi=300)
     plt.close()
 
+import argparse
+from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
+
 def main():
+    parser = argparse.ArgumentParser(description="VFI Data Preprocessing Pipeline (Leak-Free)")
+    parser.add_argument("--sample-size", type=int, default=None, help="Optional sample size for fast testing/benchmarking")
+    parser.add_argument("--ratio", type=str, default="50_50", choices=["30_70", "40_60", "50_50"], help="SMOTE balance ratio for training data")
+    args = parser.parse_args()
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(base_dir)
     viz_dir = create_visualizations_dir(project_root)
@@ -59,11 +68,25 @@ def main():
     # ---------------------------------------------------------
     logging.info(f"Loading data from {data_path}...")
     if not os.path.exists(data_path):
-        raise FileNotFoundError("amlnet.csv not found!")
-    else:
-        df = pd.read_csv(data_path)
+        raise FileNotFoundError(f"Dataset not found at {data_path}!")
+    
+    df = pd.read_csv(data_path)
+    
+    if args.sample_size and len(df) > args.sample_size:
+        logging.info(f"Sampling {args.sample_size} records for quick pipeline run...")
+        # Stratified sample if possible
+        if 'isMoneyLaundering' in df.columns:
+            laundering = df[df['isMoneyLaundering'] == 1]
+            normal = df[df['isMoneyLaundering'] == 0]
+            n_laundering = min(len(laundering), max(10, int(args.sample_size * 0.1)))
+            n_normal = args.sample_size - n_laundering
+            df = pd.concat([
+                laundering.sample(n=n_laundering, random_state=42),
+                normal.sample(n=n_normal, random_state=42)
+            ]).sample(frac=1, random_state=42).reset_index(drop=True)
+        else:
+            df = df.sample(n=args.sample_size, random_state=42).reset_index(drop=True)
         
-    # Standardize column names dynamically based on PaySim/AMLNet generic structures
     rename_map = {
         'nameOrig': 'sender',
         'nameDest': 'receiver',
@@ -76,123 +99,126 @@ def main():
     leaky_cols = ['isFraud', 'fraud_probability', 'laundering_typology', 'isFlaggedFraud']
     df.drop(columns=[col for col in leaky_cols if col in df.columns], inplace=True)
     
-    # Mock a txn_id if absent
     if 'txn_id' not in df.columns:
         df['txn_id'] = range(len(df))
         
     # ---------------------------------------------------------
-    # 2. Extract Topological Graph Features (BEFORE dropping strings)
+    # 2. Extract Topological Graph Features
     # ---------------------------------------------------------
-    logging.info("Extracting topological graphs from entire dataset. This may take several minutes...")
+    logging.info("Extracting topological graph features...")
     df = extract_features(df)
     
     # ---------------------------------------------------------
     # 3. Strip Strings & Isolate Target
     # ---------------------------------------------------------
-    # Now that we calculated PageRank using the strings, we safely strip them out!
     numeric_df = df.select_dtypes(include=[np.number]).copy()
     
     if 'is_laundering' in numeric_df.columns:
         X = numeric_df.drop(['is_laundering', 'txn_id', 'timestamp'], axis=1, errors='ignore')
         y = numeric_df['is_laundering']
-        feature_names = X.columns
     else:
         raise ValueError("Target column 'is_laundering' not found.")
 
     X.fillna(0, inplace=True)
 
     # ---------------------------------------------------------
-    # 4. Data Visualization (BEFORE)
+    # 4. Strict Train/Test Split BEFORE Scaling, PCA, or Resampling (NO DATA LEAKAGE)
     # ---------------------------------------------------------
+    logging.info("Splitting dataset into train (80%) and holdout test (20%) prior to any fitting...")
+    X_train_raw, X_test_raw, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+    logging.info(f"Train set: {len(X_train_raw)} rows (positives: {int(y_train.sum())}) | Test set: {len(X_test_raw)} rows (positives: {int(y_test.sum())})")
+
+    # Visualize class distribution
     logging.info("Generating Before-SMOTE visualization...")
-    plot_class_distribution(y, "Class Imbalance (Before SMOTE)", os.path.join(viz_dir, "before_smote.png"))
+    plot_class_distribution(y_train, "Train Set Class Imbalance (Before SMOTE)", os.path.join(viz_dir, "before_smote.png"))
     
     # ---------------------------------------------------------
-    # 5. Data Pre-processing: StandardScaler & PCA (32-dim)
+    # 5. Fit StandardScaler & PCA on TRAIN ONLY
     # ---------------------------------------------------------
-    logging.info("Applying StandardScaler...")
+    logging.info("Fitting StandardScaler on training data only...")
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    X_train_scaled = scaler.fit_transform(X_train_raw)
+    X_test_scaled = scaler.transform(X_test_raw)
     
-    logging.info("Applying PCA (32 dimensions)...")
-    from sklearn.decomposition import PCA
-    pca = PCA(n_components=32, random_state=42)
-    X_pca = pca.fit_transform(X_scaled)
-    pca_columns = [f"pca_{i+1}" for i in range(32)]
+    n_components = min(32, X_train_scaled.shape[1])
+    logging.info(f"Fitting PCA ({n_components} dimensions) on training data only...")
+    pca = PCA(n_components=n_components, random_state=42)
+    X_train_pca = pca.fit_transform(X_train_scaled)
+    X_test_pca = pca.transform(X_test_scaled)
+    pca_columns = [f"pca_{i+1}" for i in range(n_components)]
     
     # ---------------------------------------------------------
-    # 6. Data Pre-processing: SMOTE Variations
+    # 6. Apply SMOTE ONLY to Training Data
     # ---------------------------------------------------------
     ratios = {
         "30_70": 30 / 70,
         "40_60": 40 / 60,
         "50_50": 50 / 50
     }
-    
-    best_ratio_name = "50_50" # Selecting 50:50 as the best dataset version for balanced representation
-    
-    for ratio_name, target_ratio in ratios.items():
-        current_majority_count = int(sum(y == 0))
-        current_minority_count = int(sum(y == 1))
-        
-        # Step 2: SMOTE the laundering transactions for the final leap to the target_ratio
-        over = SMOTE(sampling_strategy=target_ratio, k_neighbors=3, random_state=42)
-        
-        # Step 1: Reduce legitimate transactions to firmly 500,000 only if they exceed 500,000.
-        if current_majority_count > 500000:
-            logging.info(f"Applying Hybrid Balancing (UnderSampler to 500k + SMOTE target {ratio_name.replace('_', ':')})...")
-            under = RandomUnderSampler(sampling_strategy={0: 500000, 1: current_minority_count}, random_state=42)
+    target_ratio = ratios.get(args.ratio, 50 / 50)
+    current_minority = int(sum(y_train == 1))
+    current_majority = int(sum(y_train == 0))
+    logging.info(f"Applying SMOTE ({args.ratio}) to TRAINING data only (minority count: {current_minority})...")
+
+    k_neighbors = min(3, max(1, current_minority - 1))
+    if current_minority > 1:
+        over = SMOTE(sampling_strategy=target_ratio, k_neighbors=k_neighbors, random_state=42)
+        if current_majority > 500000:
+            under = RandomUnderSampler(sampling_strategy={0: 500000, 1: current_minority}, random_state=42)
             pipeline = Pipeline(steps=[('u', under), ('o', over)])
         else:
-            logging.info(f"Applying SMOTE only (majority size {current_majority_count} <= 500k, SMOTE target {ratio_name.replace('_', ':')})...")
             pipeline = Pipeline(steps=[('o', over)])
-            
-        X_resampled, y_resampled = pipeline.fit_resample(X_pca, y)
-        
-        # ---------------------------------------------------------
-        # 7. Data Visualization (AFTER)
-        # ---------------------------------------------------------
-        logging.info(f"Generating After-SMOTE visualization for {ratio_name}...")
-        plot_class_distribution(
-            y_resampled, 
-            f"Class Balance (After SMOTE {ratio_name.replace('_', ':')})", 
-            os.path.join(viz_dir, f"after_smote_{ratio_name}.png")
-        )
-        
-        # ---------------------------------------------------------
-        # 8. Reconstruct Fully Interpretable DataFrame
-        # ---------------------------------------------------------
-        logging.info(f"Reconstructing DataFrame preserving features for {ratio_name}...")
-        processed_df = pd.DataFrame(X_resampled, columns=pca_columns)
-        processed_df['is_laundering'] = y_resampled
-        
-        # SMOTE appends synthetic samples at the end — shuffle to mix classes throughout
-        processed_df = processed_df.sample(frac=1, random_state=42).reset_index(drop=True)
-        logging.info(f"Shuffled dataset for {ratio_name} — class 0: {(processed_df['is_laundering']==0).sum()}, class 1: {(processed_df['is_laundering']==1).sum()}")
-        
-        # ---------------------------------------------------------
-        # 9. Storage
-        # ---------------------------------------------------------
-        output_csv = os.path.join(base_dir, f"processed_partition_{ratio_name}.csv")
-        logging.info(f"Saving {ratio_name} explicitly interpreted partitioned dataframe to {output_csv}...")
-        processed_df.to_csv(output_csv, index=False)
-        
-        # Identify the best dataset version and save it distinctly
-        if ratio_name == best_ratio_name:
-            best_output_csv = os.path.join(base_dir, "processed_partition_best.csv")
-            logging.info(f"Saving Best Dataset Version ({ratio_name}) to {best_output_csv}...")
-            processed_df.to_csv(best_output_csv, index=False)
-            
-    scaler_path = os.path.join(base_dir, "scaler.pkl")
-    logging.info("Saving Scaler object via joblib...")
-    joblib.dump(scaler, scaler_path)
-    
-    pca_path = os.path.join(base_dir, "pca.pkl")
-    logging.info("Saving PCA object via joblib...")
-    joblib.dump(pca, pca_path)
-    # Notice: No PCA object saved!
-    
-    logging.info("Graph-Enhanced Pre-processing Complete!")
+        X_train_resampled, y_train_resampled = pipeline.fit_resample(X_train_pca, y_train)
+    else:
+        logging.warning("Not enough minority samples for SMOTE, using raw training set.")
+        X_train_resampled, y_train_resampled = X_train_pca, y_train
+
+    # Reconstruct Train DataFrame
+    train_df = pd.DataFrame(X_train_resampled, columns=pca_columns)
+    train_df['is_laundering'] = y_train_resampled.values if hasattr(y_train_resampled, 'values') else y_train_resampled
+    train_df = train_df.sample(frac=1, random_state=42).reset_index(drop=True)
+
+    # Reconstruct Test DataFrame (Pure, natural holdout test set with NO synthetic samples!)
+    test_df = pd.DataFrame(X_test_pca, columns=pca_columns)
+    test_df['is_laundering'] = y_test.values if hasattr(y_test, 'values') else y_test
+    test_df = test_df.sample(frac=1, random_state=42).reset_index(drop=True)
+
+    # ---------------------------------------------------------
+    # 7. Visualization & Storage
+    # ---------------------------------------------------------
+    plot_class_distribution(
+        train_df['is_laundering'], 
+        f"Train Class Balance (After SMOTE {args.ratio})", 
+        os.path.join(viz_dir, f"after_smote_{args.ratio}.png")
+    )
+
+    # Save processed training dataset
+    best_output_csv = os.path.join(base_dir, "processed_partition_best.csv")
+    logging.info(f"Saving balanced training partition to {best_output_csv} ({len(train_df)} rows)...")
+    train_df.to_csv(best_output_csv, index=False)
+
+    # Save test dataset directly to fl_implementation/data/global_test.csv
+    fl_data_dir = os.path.join(project_root, "fl_implementation", "data")
+    os.makedirs(fl_data_dir, exist_ok=True)
+    test_output_csv = os.path.join(fl_data_dir, "global_test.csv")
+    logging.info(f"Saving leak-free global test set to {test_output_csv} ({len(test_df)} natural transactions)...")
+    test_df.to_csv(test_output_csv, index=False)
+
+    # Partition training data into 4 bank shards
+    num_nodes = 4
+    banks = np.array_split(train_df, num_nodes)
+    for i, bank in enumerate(banks, 1):
+        bank_csv = os.path.join(fl_data_dir, f"bank_{i}.csv")
+        bank.to_csv(bank_csv, index=False)
+        pos_ratio = bank['is_laundering'].mean()
+        logging.info(f"Saved Bank {i} shard: {len(bank)} rows to {bank_csv} (positives: {pos_ratio*100:.2f}%)")
+
+    # Save Scaler and PCA
+    joblib.dump(scaler, os.path.join(base_dir, "scaler.pkl"))
+    joblib.dump(pca, os.path.join(base_dir, "pca.pkl"))
+    logging.info("[SUCCESS] Leak-free preprocessing and 4-bank partitioning complete!")
 
 if __name__ == "__main__":
     main()

@@ -7,15 +7,15 @@ const { spawn } = require('child_process');
 
 const scriptToRun = path.join(__dirname, 'coordinate.js');
 
-console.log("🚀 Launching Verifiable Federated Intelligence Orchestrator...");
+console.log("[START] Launching Verifiable Federated Intelligence Orchestrator...");
 
 const proc = spawn('node', [scriptToRun], { stdio: 'inherit', cwd: __dirname });
 
 proc.on('close', (code) => {
     if (code === 0) {
-        console.log("🎉 Orchestration finished successfully!");
+        console.log("[COMPLETE] Orchestration finished successfully!");
     } else {
-        console.error(`❌ Orchestrator process exited with code ${code}`);
+        console.error(`[FAIL] Orchestrator process exited with code ${code}`);
         process.exit(code);
     }
 });

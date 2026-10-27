@@ -40,8 +40,8 @@ describe("AMLVerifier & Groth16Verifier End-to-End System", function () {
     // Parse values from mockProofData schema
     const a = mockProofData.proof.pi_a.slice(0, 2);
     const b = [
-      mockProofData.proof.pi_b[0],
-      mockProofData.proof.pi_b[1]
+      [mockProofData.proof.pi_b[0][1], mockProofData.proof.pi_b[0][0]],
+      [mockProofData.proof.pi_b[1][1], mockProofData.proof.pi_b[1][0]]
     ];
     const c = mockProofData.proof.pi_c.slice(0, 2);
     const input = mockProofData.publicSignals;
@@ -108,7 +108,10 @@ describe("AMLVerifier & Groth16Verifier End-to-End System", function () {
 
   it("Should reject double submission of the same round", async function () {
     const a = mockProofData.proof.pi_a.slice(0, 2);
-    const b = [mockProofData.proof.pi_b[0], mockProofData.proof.pi_b[1]];
+    const b = [
+      [mockProofData.proof.pi_b[0][1], mockProofData.proof.pi_b[0][0]],
+      [mockProofData.proof.pi_b[1][1], mockProofData.proof.pi_b[1][0]]
+    ];
     const c = mockProofData.proof.pi_c.slice(0, 2);
     const input = mockProofData.publicSignals;
 
@@ -136,7 +139,10 @@ describe("AMLVerifier & Groth16Verifier End-to-End System", function () {
 
   it("Should revert if cryptographic verification fails", async function () {
     const a = mockProofData.proof.pi_a.slice(0, 2);
-    const b = [mockProofData.proof.pi_b[0], mockProofData.proof.pi_b[1]];
+    const b = [
+      [mockProofData.proof.pi_b[0][1], mockProofData.proof.pi_b[0][0]],
+      [mockProofData.proof.pi_b[1][1], mockProofData.proof.pi_b[1][0]]
+    ];
     const c = mockProofData.proof.pi_c.slice(0, 2);
     // Alter input to fail verifyProof (should revert because input doesn't match verifyProof success paths)
     const invalidInput = ["9", "9", "9"];
@@ -152,5 +158,108 @@ describe("AMLVerifier & Groth16Verifier End-to-End System", function () {
         mockProofData.circuit_hash
       )
     ).to.be.revertedWith("Cryptographic zk-SNARK verification failed");
+  });
+
+  it("Should revert if public commitment is altered", async function () {
+    const a = mockProofData.proof.pi_a.slice(0, 2);
+    const b = [
+      [mockProofData.proof.pi_b[0][1], mockProofData.proof.pi_b[0][0]],
+      [mockProofData.proof.pi_b[1][1], mockProofData.proof.pi_b[1][0]]
+    ];
+    const c = mockProofData.proof.pi_c.slice(0, 2);
+    // Tamper the globalCommitment signal
+    const tamperedInput = [
+      "12345678901234567890123456789012345678901234567890",
+      mockProofData.publicSignals[1],
+      mockProofData.publicSignals[2]
+    ];
+
+    await expect(
+      amlVerifier.verifyAndRecordRound(
+        a, b, c, tamperedInput,
+        999, "0x1234",
+        9500, 9200, 9000, 9100, 4,
+        mockProofData.circuit_hash
+      )
+    ).to.be.revertedWith("Cryptographic zk-SNARK verification failed");
+  });
+
+  it("Should revert if proof point A is corrupted", async function () {
+    const corruptedA = [
+      "11111111111111111111111111111111111111111111111111",
+      mockProofData.proof.pi_a[1]
+    ];
+    const b = [
+      [mockProofData.proof.pi_b[0][1], mockProofData.proof.pi_b[0][0]],
+      [mockProofData.proof.pi_b[1][1], mockProofData.proof.pi_b[1][0]]
+    ];
+    const c = mockProofData.proof.pi_c.slice(0, 2);
+    const input = mockProofData.publicSignals;
+
+    await expect(
+      amlVerifier.verifyAndRecordRound(
+        corruptedA, b, c, input,
+        998, "0x1234",
+        9500, 9200, 9000, 9100, 4,
+        mockProofData.circuit_hash
+      )
+    ).to.be.revertedWith("Cryptographic zk-SNARK verification failed");
+  });
+
+  it("Should correctly retrieve ledger entry for a verified round and revert for unverified", async function () {
+    const a = mockProofData.proof.pi_a.slice(0, 2);
+    const b = [
+      [mockProofData.proof.pi_b[0][1], mockProofData.proof.pi_b[0][0]],
+      [mockProofData.proof.pi_b[1][1], mockProofData.proof.pi_b[1][0]]
+    ];
+    const c = mockProofData.proof.pi_c.slice(0, 2);
+    const input = mockProofData.publicSignals;
+    const roundNumber = 50;
+
+    await amlVerifier.verifyAndRecordRound(
+      a, b, c, input,
+      roundNumber, "0xabcdef",
+      9800, 9700, 9600, 9650, 4,
+      mockProofData.circuit_hash
+    );
+
+    const entry = await amlVerifier.getLedgerEntry(roundNumber);
+    expect(entry.roundNumber).to.equal(roundNumber);
+    expect(entry.accuracy).to.equal(9800);
+    expect(entry.f1).to.equal(9650);
+
+    await expect(amlVerifier.getLedgerEntry(99999)).to.be.revertedWith("Round not verified");
+  });
+
+  it("Should revert if deployed with zero address verifier", async function () {
+    const AMLVerifierFactory = await ethers.getContractFactory("AMLVerifier");
+    await expect(
+      AMLVerifierFactory.deploy(ethers.ZeroAddress)
+    ).to.be.revertedWith("Invalid verifier address");
+  });
+
+  it("Should revert getLatestRound when no rounds have been recorded", async function () {
+    const AMLVerifierFactory = await ethers.getContractFactory("AMLVerifier");
+    const freshVerifier = await AMLVerifierFactory.deploy(await groth16Verifier.getAddress());
+    await expect(freshVerifier.getLatestRound()).to.be.revertedWith("No rounds verified yet");
+  });
+
+  it("Should return false from verifyOnly on invalid inputs without reverting", async function () {
+    const a = mockProofData.proof.pi_a.slice(0, 2);
+    const b = [
+      [mockProofData.proof.pi_b[0][1], mockProofData.proof.pi_b[0][0]],
+      [mockProofData.proof.pi_b[1][1], mockProofData.proof.pi_b[1][0]]
+    ];
+    const c = mockProofData.proof.pi_c.slice(0, 2);
+    const invalidInput = ["0", "0", "0"];
+
+    const isValid = await amlVerifier.verifyOnly(a, b, c, invalidInput);
+    expect(isValid).to.equal(false);
+  });
+
+  it("Should accurately track round count and round numbers array", async function () {
+    const count = await amlVerifier.getRoundsCount();
+    const numbers = await amlVerifier.getRoundNumbers();
+    expect(numbers.length).to.equal(Number(count));
   });
 });

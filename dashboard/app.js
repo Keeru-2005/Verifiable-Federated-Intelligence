@@ -375,7 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("All ledger sync paths failed:", err);
             if (ledgerTableBody) {
                 ledgerTableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--status-error, #e74c3c); padding: 60px;">
-                    ⚠️ Connection failed. Ensure the blockchain node or dashboard server is running.
+                    [WARN] Connection failed. Ensure the blockchain node or dashboard server is running.
                 </td></tr>`;
             }
         }

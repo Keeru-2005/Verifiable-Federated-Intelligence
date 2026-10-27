@@ -34,7 +34,7 @@ async function main() {
   let contractAddress = deployedAddresses.AMLVerifier;
   const code = await ethers.provider.getCode(contractAddress);
   if (code === "0x" || code === "0x0") {
-    console.log("💡 Contract not found at address on this network. Deploying fresh contracts...");
+    console.log("[NOTE] Contract not found at address on this network. Deploying fresh contracts...");
     const Groth16VerifierFactory = await ethers.getContractFactory("Groth16Verifier");
     const verifierInst = await Groth16VerifierFactory.deploy();
     await verifierInst.waitForDeployment();
@@ -110,7 +110,7 @@ async function main() {
   // Retrieve verification result from contract
   const roundDetails = await amlVerifier.rounds(roundNumber);
   console.log(`
-🎉 Verification Successful!
+[COMPLETE] Verification Successful!
 On-Chain Round Log Details:
 ----------------------------
 Round Index  : ${roundDetails.roundNumber.toString()}
