@@ -36,25 +36,39 @@ def count_rows(csv_path):
 
 def main():
     args = sys.argv[1:]
-    if len(args) != 8:
-        print(__doc__)
-        sys.exit(1)
-
-    pairs = [(args[i], args[i + 1]) for i in range(0, 8, 2)]
+    fl_dir = SCRIPT_DIR
+    
+    if len(args) == 8:
+        pairs = [(args[i], args[i + 1]) for i in range(0, 8, 2)]
+    else:
+        # Default fallback to 4 standard banks
+        pairs = []
+        global_pt = os.path.join(fl_dir, "model.pt")
+        for i in range(1, 5):
+            chk = os.path.join(fl_dir, f"model_bank_{i}.pt")
+            if not os.path.exists(chk) and os.path.exists(global_pt):
+                chk = global_pt
+            csv_path = os.path.join(fl_dir, "data", f"bank_{i}.csv")
+            pairs.append((chk, csv_path))
 
     client_weights = []
     client_counts = []
     for checkpoint_path, data_path in pairs:
+        if not os.path.exists(checkpoint_path):
+            raise FileNotFoundError(f"Model checkpoint not found at {checkpoint_path}")
+        if not os.path.exists(data_path):
+            raise FileNotFoundError(f"Bank CSV not found at {data_path}")
         print(f"Extracting from {checkpoint_path} ...")
         client_weights.append(extract_output_layer_params(checkpoint_path))
         n_rows = count_rows(data_path)
         client_counts.append(n_rows)
         print(f"  {data_path}: {n_rows} rows")
 
-    with open("clients.json", "w") as f:
+    out_file = os.path.join(PROJECT_ROOT, "clients.json")
+    with open(out_file, "w") as f:
         json.dump({"clientWeights": client_weights, "clientCounts": client_counts}, f, indent=2)
 
-    print(f"\nWrote clients.json: {len(pairs)} banks, real counts {client_counts}")
+    print(f"\nWrote {out_file}: {len(pairs)} banks, real counts {client_counts}")
 
 
 if __name__ == "__main__":

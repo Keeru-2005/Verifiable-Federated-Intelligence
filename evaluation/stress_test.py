@@ -7,7 +7,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def run_stress_test():
     print("=================================================");
-    print("⚡ STRESS TEST: Simulating Node Failure Mid-Round");
+    print("[STEP] STRESS TEST: Simulating Node Failure Mid-Round");
     print("=================================================");
     
     # 1. Start Server
@@ -43,7 +43,7 @@ def run_stress_test():
         client_procs.append(proc)
 
     # 3. Simulate mid-round node termination (kill Node 4 after 5 seconds)
-    print("\n[3/4] 💥 SIMULATING NODE FAILURE: Force killing Bank Node 4 mid-training...")
+    print("\n[3/4] [ERROR] SIMULATING NODE FAILURE: Force killing Bank Node 4 mid-training...")
     time.sleep(5)
     client_procs[3].kill()
     print("--> Bank Node 4 killed.")
@@ -55,11 +55,11 @@ def run_stress_test():
         print("\n--- Server Process Output ---")
         print(stdout[-500:] if stdout else "No stdout")
         print("----------------------------")
-        print("✅ STRESS TEST PASSED: Server handled node failure cleanly.")
+        print("[SUCCESS] STRESS TEST PASSED: Server handled node failure cleanly.")
             
     except subprocess.TimeoutExpired:
         server_proc.kill()
-        print("\n✅ STRESS TEST PASSED: Strict Quorum Enforced!")
+        print("\n[SUCCESS] STRESS TEST PASSED: Strict Quorum Enforced!")
         print("   Explanation: The FL Server requires min_available_clients=4.")
         print("   When Node 4 was killed, only 3 nodes remained. The server correctly refused")
         print("   to aggregate partial/corrupted client weights, blocking until timeout.")

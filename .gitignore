@@ -35,7 +35,10 @@ scaler.pkl
 !blockchain/hardhat.config.js
 !blockchain/test/AMLVerifier.test.js
 !zkp/verify_proof.js
+!zkp/generate_proof.js
 !zkp/circuit/generate_circuit_input.js
+!demo/run_demo.js
+!tests/**/*.js
 *.map
 
 # Allow model source files (not binary weights)
@@ -57,9 +60,5 @@ node_modules/
 blockchain/node_modules/
 blockchain/artifacts/
 blockchain/cache/
-
-zk_proof/node_modules/
 fl_implementation/__pycache__/
-contracts_project/node_modules/
-zk_proof/node_modules/
 schemas/

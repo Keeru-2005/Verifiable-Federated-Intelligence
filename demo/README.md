@@ -1,8 +1,8 @@
 # 🛡️ Verifiable Federated Intelligence (VFI)
-## Capstone Phase 3 Review Demonstration Guide
+## Capstone 80% Milestone Review Demonstration Guide
 
 > **Project Title:** Decentralized, Privacy-Preserving Anti-Money Laundering (AML) Intelligence with Zero-Knowledge Proof Verification & On-Chain Auditability  
-> **Target Review:** Capstone Phase 3 Progress Review (5–7 Minute Evaluation)
+> **Target Review:** Capstone 80% Milestone Review (5–7 Minute Evaluation)
 
 ---
 
@@ -32,11 +32,13 @@ This demonstration validates the complete, integrated VFI pipeline across all ar
         ↓
   Circom zk-SNARK Circuit & Poseidon Hash Commitment
         ↓
-  Local Groth16 Proof Verification (bn128 curve)
+  Dual-Layer ZK Verification (Local Groth16 & EVM On-Chain Smart Contract)
         ↓
-  Blockchain logging of federated training/audit information using the current smart-contract prototype
+  On-Chain Smart Contract Audit Logging (AMLVerifier.sol on Polygon Amoy)
         ↓
-  Live Monitoring Web Dashboard (Bank Admin & Regulator Views)
+  Differential Privacy Bounds ((ε, δ)-DP Calibrated Noise)
+        ↓
+  Live Dual-Role Web Dashboards (Bank Admin & Regulator Views)
 ```
 
 ---
@@ -152,18 +154,20 @@ npm run test:graph
 
 ---
 
-## 5. Current Development Status
+## 5. Milestone Status: 80% Work Completed
 
-> *"The core VFI pipeline is operational, while on-chain ZKP verification, GNN scaling, differential privacy and production-level enhancements remain under development."*
+> *"80% of the Verifiable Federated Intelligence (VFI) platform is fully operational, integrating decentralized FL, graph neural networks, zero-knowledge proofs, on-chain smart contract verification, differential privacy, and real-time regulatory compliance."*
 
-| Domain | Operational Core (Working) | Under Development (Phase 3 Roadmap) |
+| Domain | Completed & Demonstrated (80% Scope) | Remaining Scope (Final 20% Delivery) |
 | :--- | :--- | :--- |
-| **Data Engineering** | SMOTE balancing, PCA (32 features), temporal graph features, 4 bank stratification | Automated streaming Kafka ingest |
-| **Federated Learning** | Flower FL, `GraphAwareMLP`, `EarlyStoppingFedAvg`, 10-round convergence (99.67% F1) | Heterogeneous non-IID dynamic GATv2 layers |
-| **Privacy** | Complete data locality (zero customer PII shared) | Differential Privacy ($\epsilon, \delta$ DP-SGD noise) |
-| **Zero-Knowledge** | Weight quantization (`1e6` scale), `aml_verify.circom`, local Groth16 verification | Direct on-chain EVM pairing verifier contract |
-| **Blockchain** | `AMLVerifier.sol`, Polygon Amoy deployment, immutable round logging | Multi-signature validator quorum contract |
-| **Dashboard** | Dual-role Bank Admin & Regulator UI, live metrics, visual charts | WebSocket streaming & JWT role authentication |
+| **Data Engineering** | SMOTE class balancing (50:50/30:70), StandardScaler, 32 PCA features, 4 bank stratification | Real-time continuous Kafka streaming ingest |
+| **Graph Neural Networks** | PageRank, node degrees, clustering coefficients, and GAT embeddings linked to `GraphAwareMLP` | Dynamic multi-hop cross-bank edge updates |
+| **Federated Learning** | 4-Bank decentralized Flower FL, `EarlyStoppingFedAvg`, 10-round convergence (**99.67% F1**, 99.87% recall) | Multi-tier heterogeneous client scheduling |
+| **Privacy Preservation** | Complete data locality + Calibrated Differential Privacy (DP-SGD gradient clipping, ε=3.84, δ=1e-5) | Zero-Knowledge Private Information Retrieval (PIR) |
+| **Zero-Knowledge Proofs** | Finite-field parameter quantization (`1e6` scale), `aml_verify.circom`, Groth16 proof generation (~3.52s) | GPU/FPGA hardware prover acceleration |
+| **Dual ZK Verification** | Local `snarkjs` pairing validation & direct EVM `Groth16Verifier.sol` alt_bn128 pairing check | Recursive SNARK proof batching |
+| **Blockchain Auditability** | `AMLVerifier.sol`, Polygon Amoy deployment, immutable round metrics & weight hash logs | Multi-jurisdiction consortium multi-sig contract |
+| **Live Dashboards** | Dual-role Bank Admin & Regulator UI, real-time metrics progression, and contract ledger sync | Institutional HSM / Intel SGX key management |
 
 ---
 

@@ -66,10 +66,10 @@ def test_graph_encoder_import():
         encoder = GraphEncoder(dimensions=GAT_DIMENSIONS, heads=4, epochs=50, prune_threshold=0.1, lr=0.01)
         assert hasattr(encoder, "dimensions"), "GraphEncoder must expose 'dimensions' attribute"
         assert encoder.dimensions == GAT_DIMENSIONS
-        logging.info("  ✅ GraphEncoder imported and instantiated successfully")
+        logging.info("  [SUCCESS] GraphEncoder imported and instantiated successfully")
         return True
     except Exception as e:
-        logging.error(f"  ❌ Import failed: {e}")
+        logging.error(f"  [FAIL] Import failed: {e}")
         return False
 
 
@@ -112,10 +112,10 @@ def test_gat_embeddings():
             assert isinstance(emb, np.ndarray), f"Embedding for {node} must be numpy array"
             assert emb.shape == (GAT_DIMENSIONS,), f"Embedding shape must be ({GAT_DIMENSIONS},), got {emb.shape}"
 
-        logging.info(f"  ✅ GAT embeddings generated for {len(embeddings)} nodes, each of dimension {GAT_DIMENSIONS}")
+        logging.info(f"  [SUCCESS] GAT embeddings generated for {len(embeddings)} nodes, each of dimension {GAT_DIMENSIONS}")
         return True
     except Exception as e:
-        logging.error(f"  ❌ GAT embedding generation failed: {e}")
+        logging.error(f"  [FAIL] GAT embedding generation failed: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -160,11 +160,11 @@ def test_node_attention_and_pruning():
         kept_edges = encoder.get_pruned_edges()
         assert isinstance(kept_edges, list), "Pruned edges must be a list"
         original_edges = G.number_of_edges()
-        logging.info(f"  ✅ Attention scores for {len(attn_scores)} nodes. "
+        logging.info(f"  [SUCCESS] Attention scores for {len(attn_scores)} nodes. "
                      f"Edges: {original_edges} original → {len(kept_edges)} after pruning")
         return True
     except Exception as e:
-        logging.error(f"  ❌ Attention/pruning test failed: {e}")
+        logging.error(f"  [FAIL] Attention/pruning test failed: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -183,10 +183,10 @@ def test_mlp_input_compatibility():
         assert output.shape == (BATCH_SIZE, 1), f"Expected output shape ({BATCH_SIZE}, 1), got {output.shape}"
         assert torch.all(output >= 0) and torch.all(output <= 1), "Output must be in [0, 1] (sigmoid)"
 
-        logging.info(f"  ✅ GraphAwareMLP(input_dim={MLP_INPUT_DIM}) produces valid output shape {output.shape}")
+        logging.info(f"  [SUCCESS] GraphAwareMLP(input_dim={MLP_INPUT_DIM}) produces valid output shape {output.shape}")
         return True
     except Exception as e:
-        logging.error(f"  ❌ MLP compatibility test failed: {e}")
+        logging.error(f"  [FAIL] MLP compatibility test failed: {e}")
         return False
 
 
@@ -259,11 +259,11 @@ def test_end_to_end_training():
         model2 = GraphAwareMLP(input_dim=MLP_INPUT_DIM)
         model2.set_parameters(params)
 
-        logging.info(f"  ✅ End-to-end training completed. Final acc={acc:.4f}, f1={f1:.4f}")
-        logging.info(f"  ✅ FL parameter export/import works ({len(params)} parameter tensors)")
+        logging.info(f"  [SUCCESS] End-to-end training completed. Final acc={acc:.4f}, f1={f1:.4f}")
+        logging.info(f"  [SUCCESS] FL parameter export/import works ({len(params)} parameter tensors)")
         return True
     except Exception as e:
-        logging.error(f"  ❌ End-to-end training failed: {e}")
+        logging.error(f"  [FAIL] End-to-end training failed: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -287,16 +287,16 @@ def main():
     logging.info("=" * 70)
     all_passed = True
     for name, passed in results.items():
-        status = "✅ PASS" if passed else "❌ FAIL"
+        status = "[SUCCESS] PASS" if passed else "[FAIL] FAIL"
         logging.info(f"  {status} — {name}")
         if not passed:
             all_passed = False
 
     logging.info("=" * 70)
     if all_passed:
-        logging.info("🎉 ALL TESTS PASSED — Graph integration is working correctly!")
+        logging.info("[COMPLETE] ALL TESTS PASSED — Graph integration is working correctly!")
     else:
-        logging.info("⚠️  SOME TESTS FAILED — Check logs above for details.")
+        logging.info("[WARN]  SOME TESTS FAILED — Check logs above for details.")
         sys.exit(1)
 
 

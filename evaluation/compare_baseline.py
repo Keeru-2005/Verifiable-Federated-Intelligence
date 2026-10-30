@@ -142,7 +142,7 @@ def load_federated_metrics():
                     "f1": float(data["metrics"]["f1"])
                 })
         except Exception as e:
-            print(f"⚠️ Error reading {file_path}: {e}")
+            print(f"[WARN] Error reading {file_path}: {e}")
             
     # Sort by round number
     rounds_data = sorted(rounds_data, key=lambda x: x["round"])
@@ -157,7 +157,7 @@ def generate_comparison_plots(centralized_history, federated_history):
     
     # If federated history is empty (e.g. training hasn't run yet), create mock/empty DataFrame
     if not federated_history:
-        print("⚠️ Warning: No federated metrics found in schemas/ directory. Placing dummy placeholders for comparison visualization.")
+        print("[WARN] Warning: No federated metrics found in schemas/ directory. Placing dummy placeholders for comparison visualization.")
         # Fallback to empty/placeholder values matching centralized trends but slightly lower to show privacy cost
         federated_history = [
             {
@@ -204,7 +204,7 @@ def generate_comparison_plots(centralized_history, federated_history):
     plt.tight_layout()
     plot_path = os.path.join(VISUALIZATION_DIR, "baseline_vs_federated.png")
     plt.savefig(plot_path, dpi=300)
-    print(f"📊 Saved performance comparison chart to {plot_path}")
+    print(f"[METRICS] Saved performance comparison chart to {plot_path}")
     
     # Save the json metrics comparison for the dashboard API
     results_path = os.path.join(PROJECT_ROOT, "evaluation", "comparison_results.json")
@@ -213,19 +213,28 @@ def generate_comparison_plots(centralized_history, federated_history):
             "centralized": centralized_history,
             "federated": federated_history
         }, f, indent=2)
-    print(f"💾 Saved raw comparison results JSON to {results_path}")
+    print(f"[SAVE] Saved raw comparison results JSON to {results_path}")
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Centralized Baseline Training & Comparison")
+    parser.add_argument("--epochs", type=int, default=10, help="Training epochs")
+    parser.add_argument("--sample", type=int, default=None, help="Optional sample size for fast benchmarking")
+    args = parser.parse_args()
+
     print("=== Centralized Baseline Model Training & Comparison ===")
     try:
         X, y, input_dim = load_and_scale_data(DATA_PATH)
+        if args.sample and len(X) > args.sample:
+            idx = np.random.choice(len(X), args.sample, replace=False)
+            X, y = X[idx], y[idx]
         print(f"Loaded dataset: {X.shape[0]} rows, {input_dim} features.")
     except Exception as e:
-        print(f"❌ Error loading data: {e}")
+        print(f"[FAIL] Error loading data: {e}")
         sys.exit(1)
         
-    # Train centralized model (10 epochs)
-    centralized_history = train_centralized(X, y, input_dim, epochs=10)
+    # Train centralized model
+    centralized_history = train_centralized(X, y, input_dim, epochs=args.epochs)
     
     # Load federated metrics
     federated_history = load_federated_metrics()
