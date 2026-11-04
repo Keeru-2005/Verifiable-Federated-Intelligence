@@ -148,6 +148,8 @@ class GraphEncoder:
                 loss = criterion(out[mask_tensor], labels_tensor[mask_tensor])
                 loss.backward()
                 optimizer.step()
+                if (epoch + 1) % 10 == 0 or epoch == 0 or (epoch + 1) == self.epochs:
+                    logger.info(f"  [GAT Training] Epoch {epoch + 1}/{self.epochs} ({((epoch + 1)/self.epochs)*100:.0f}%) | Loss: {loss.item():.4f}")
             else:
                 break
                 

@@ -141,7 +141,6 @@ def extract_features(df):
             compute_snapshot_features,
             build_final_graph_for_gat
         )
-
         snapshots, df = build_temporal_bipartite_graph(df)
         snapshots, account_features_over_time = compute_snapshot_features(snapshots, df)
         G_temporal = build_final_graph_for_gat(snapshots, account_features_over_time)
