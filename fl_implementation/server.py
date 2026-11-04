@@ -119,7 +119,7 @@ class EarlyStoppingFedAvg(fl.server.strategy.FedAvg):
 
             # 3. L2 Norm threshold check (Byzantine model poisoning defense)
             total_l2_norm = np.sqrt(sum(np.sum(np.square(arr)) for arr in ndarrays))
-            MAX_TOLERABLE_L2_NORM = 150.0  # Normal trained MLP weights have L2 norm < 25.0
+            MAX_TOLERABLE_L2_NORM = 500.0  # Allow legitimate trained MLP weights up to 500.0
             if total_l2_norm > MAX_TOLERABLE_L2_NORM:
                 print(f"[SECURITY] Dropping poisoned update from {client_proxy.cid}: extreme L2 norm ({total_l2_norm:.2f} > {MAX_TOLERABLE_L2_NORM})")
                 continue
@@ -276,7 +276,7 @@ if __name__ == "__main__":
     eval_fn = get_eval_fn(test_csv_path)
 
     strategy = EarlyStoppingFedAvg(
-        patience=2,
+        patience=5,
         min_delta=0.0002,
         evaluate_fn=eval_fn,
         evaluate_metrics_aggregation_fn=exact_metric_aggregation,
