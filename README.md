@@ -47,6 +47,8 @@ graph TD
 
 ## ⚡ Quickstart Guide
 
+> 📖 **Looking for order-wise copy-pasteable commands?** See the [COMMANDS.md](COMMANDS.md) and [docs/RUNBOOK.md](docs/RUNBOOK.md) guides.
+
 ### 1. Prerequisites
 - **Python:** `3.10` – `3.13` (with PyTorch, Flower, scikit-learn, imbalanced-learn, networkx)
 - **Node.js:** `^18.0` – `^25.0`
@@ -56,7 +58,7 @@ graph TD
 ### 2. Environment Setup
 ```bash
 # Clone the repository
-git clone https://github.com/Keeru-2005/Verifiable-Federated-Intelligence.git
+git clone https://github.com/ananyalakshmi9/Verifiable-Federated-Intelligence.git
 cd Verifiable-Federated-Intelligence
 
 # Install Python dependencies
@@ -74,50 +76,66 @@ cd dashboard && npm install && cd ..
 
 ---
 
-## 🧪 Automated Testing
+## 🚀 Step-by-Step Execution Guide
 
-The repository contains 34 comprehensive automated tests covering data preprocessing, model training, federated learning, zero-knowledge proofs, smart contracts, backend APIs, and end-to-end integration:
+Run these sequential commands across your terminal tabs to execute the complete pipeline:
 
+### Step 1: Preprocess Dataset & Extract Graph Features
 ```bash
-# Run ALL 34 tests in a single command
-npm test
+python3 data/preprocess.py
+```
+*Extracts PageRank, clustering, temporal burst features, applies SMOTE 50:50, and saves partitions to `data/processed_partition_best.csv` and `fl_implementation/data/bank_1.csv` through `bank_4.csv`.*
 
-# Run individual test suites:
-npm run test:python      # Pytest: Preprocessing, Model/FL, ZKP, & E2E Pipeline (21 tests)
-npm run test:contracts   # Hardhat: Groth16 EVM Pairing & AMLVerifier tests (7 tests)
-npm run test:api         # Node.js: Backend Express API & Concurrency tests (6 tests)
+### Step 2: Run Federated Learning (Flower)
+```bash
+# Terminal 1: Start Flower Aggregation Server
+python3 fl_implementation/server.py --rounds 10 --min-clients 4
+
+# Terminal 2: Launch the 4 Bank Clients simultaneously
+python3 fl_implementation/client.py --cid 1 & python3 fl_implementation/client.py --cid 2 & python3 fl_implementation/client.py --cid 3 & python3 fl_implementation/client.py --cid 4 &
 ```
 
-See [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) for full benchmark timings and test details.
+### Step 3: Start Local Blockchain & Deploy Contracts
+```bash
+# Terminal 3: Start Hardhat Node
+cd blockchain && npx hardhat node
+
+# Terminal 2: Deploy AML Verifier smart contracts
+npm run blockchain:deploy
+```
+
+### Step 4: Record Zero-Knowledge Proof On-Chain
+```bash
+# Terminal 2: Generate Groth16 proof & submit to contract
+npm run blockchain:submit
+```
+
+### Step 5: Launch Enterprise Web Dashboards
+```bash
+# Terminal 2: Start Express Web Server
+npm run dashboard
+```
+Open your browser to:
+- **Bank Operator Console:** `http://localhost:3000` (Federated model metrics, baseline comparisons, node telemetry)
+- **Regulator Audit Portal:** `http://localhost:3000/regulator.html` (Cryptographic verification status, weight commitments, on-chain ledger records)
 
 ---
 
-## 🚀 Live Capstone Demonstration
+## 🧪 Automated Testing
 
-### Option A: Complete Interactive Milestone Demo (Recommended)
-Runs through all 10 stages of the pipeline with real-time logging, live proof generation, off-chain pairing check, and on-chain verification:
+The repository contains **45 comprehensive automated tests** (100% pass rate) covering data preprocessing, model training, federated learning, zero-knowledge proofs, smart contracts, backend APIs, and end-to-end integration:
+
 ```bash
-npm run demo
+# Run ALL 45 tests in a single command
+npm test
+
+# Run individual test suites:
+npm run test:python      # Pytest: Preprocessing, Model/FL, ZKP, & E2E Pipeline (27 tests)
+npm run test:contracts   # Hardhat: Groth16 EVM Pairing & AMLVerifier tests (11 tests)
+npm run test:api         # Node.js: Backend Express API & Concurrency tests (7 tests)
 ```
 
-### Option B: Single-Command End-to-End Pipeline Orchestration
-Executes data preprocessing, Flower federated learning, weight quantization, Groth16 proof generation, and smart contract submission:
-```bash
-# Fast mode for testing/demo (sample dataset)
-node orchestrate.js --quick
-
-# Full production mode (all 1.09M transactions across 10 rounds)
-node orchestrate.js
-```
-
-### Option C: Live Dual-Role Web Dashboards
-Start the local dashboard server:
-```bash
-npm run dashboard
-```
-Then navigate to:
-- **Bank Admin Dashboard:** `http://localhost:3000` (Federated model metrics, baseline comparisons, node telemetry).
-- **Regulator Audit Dashboard:** `http://localhost:3000/regulator.html` (Cryptographic verification status, weight commitments, on-chain ledger records).
+See [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) for full benchmark timings and test details.
 
 ---
 
