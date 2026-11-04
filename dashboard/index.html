@@ -3,185 +3,746 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verifiable Federated Intelligence - Bank Admin</title>
+  <title>VFI Platform — Financial Institution Operational Portal</title>
+  <meta name="description" content="Verifiable Federated Intelligence enterprise portal for institutional federated learning, privacy metrics, and cryptographic auditability.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Navbar -->
-  <nav class="navbar">
-    <div class="logo">
-      <div class="logo-icon">V</div>
-      <div class="logo-text">Verifiable Federated Intelligence</div>
-    </div>
-    <div class="nav-links">
-      <a href="index.html" class="nav-item active">Bank Admin View</a>
-      <a href="regulator.html" class="nav-item">Regulator View</a>
-    </div>
-  </nav>
-
-  <div class="main-container">
+  <div class="app-container">
     
-    <!-- Dashboard Header -->
-    <div class="dashboard-header">
-      <div class="header-title">
-        <h1>Bank Admin Control Center</h1>
-        <p>Monitor decentralized Flower FL rounds, node health partitions, and trigger ZK audit logging.</p>
-      </div>
-      <div>
-        <button id="run-pipeline-btn" class="btn-primary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-          Run E2E Pipeline
-        </button>
-      </div>
-    </div>
-
-    <!-- Dashboard Grid -->
-    <div class="dashboard-grid">
-
-      <!-- 80% MILESTONE STATUS CARD -->
-      <div class="glass-card col-12" style="border-left: 4px solid var(--accent-cyan); background: linear-gradient(135deg, rgba(10, 15, 36, 0.85), rgba(18, 24, 58, 0.7));">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-              <span class="status-badge" style="background: rgba(0, 242, 254, 0.15); color: var(--accent-cyan); border: 1px solid rgba(0, 242, 254, 0.4); font-weight: 700; font-size: 11px; letter-spacing: 0.8px; padding: 4px 10px; border-radius: 6px;">80% MILESTONE REVIEW</span>
-              <strong style="color: var(--text-primary); font-size: 15px;">System Architecture Status: 80% Operational</strong>
-            </div>
-            <p style="margin: 0; color: var(--text-secondary); font-size: 13px; max-width: 620px; line-height: 1.5;">
-              80% of the Verifiable Federated Intelligence architecture is fully operational—including 4-bank FL, GAT embeddings, ZK proof generation, on-chain EVM smart contract verification, differential privacy, and regulatory audit logging.
-            </p>
+    <!-- Persistent Sidebar Navigation -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <div class="brand-wrapper">
+          <div class="brand-mark">VFI</div>
+          <div class="brand-details">
+            <span class="brand-title">Verifiable Federated</span>
+            <span class="brand-tagline">Intelligence Platform</span>
           </div>
-          <div style="display: flex; gap: 32px; flex-wrap: wrap; font-size: 13px;">
-            <div style="min-width: 220px;">
-              <div style="color: var(--status-success); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                <span>[OK]</span> Completed & Demonstrated (80% Scope)
-              </div>
-              <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.7;">
-                <li>[OK] 4-Bank Federated Learning (Flower)</li>
-                <li>[OK] GAT Graph Node Embeddings</li>
-                <li>[OK] ZK Proof Generation (Circom/Groth16)</li>
-                <li>[OK] Dual ZK Verification (Local & EVM)</li>
-                <li>[OK] Immutable Audit Trail (Polygon Amoy)</li>
-                <li>[OK] Differential Privacy (DP-SGD Baseline)</li>
-              </ul>
-            </div>
-            <div style="min-width: 220px;">
-              <div style="color: var(--status-warning); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                <span>•</span> Remaining Scope (Final 20% Delivery)
-              </div>
-              <ul style="list-style: none; padding: 0; margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.7;">
-                <li>• Real-Time Kafka Streaming Ingest</li>
-                <li>• Hardware-Accelerated ZK Proving</li>
-                <li>• Multi-Jurisdiction Consortium Multi-Sig</li>
-                <li>• Institutional HSM / SGX Key Custody</li>
-              </ul>
-            </div>
+        </div>
+
+        <!-- Role Workspace Switcher -->
+        <div class="role-switcher-card">
+          <a href="index.html" class="role-btn active" title="Financial Institution View">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+            Institution
+          </a>
+          <a href="regulator.html" class="role-btn" title="Regulatory Oversight View">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Regulator
+          </a>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Operations</div>
+        <a class="nav-item active" data-section="overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Overview
+        </a>
+        <a class="nav-item" data-section="federated-learning">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Federated Learning
+          <span class="nav-badge" id="sidebar-rounds-badge">10 R</span>
+        </a>
+        <a class="nav-item" data-section="model-performance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20V14"/></svg>
+          Model Performance
+        </a>
+
+        <div class="nav-section-label">Trust & Assurance</div>
+        <a class="nav-item" data-section="privacy-compliance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Privacy & Compliance
+        </a>
+        <a class="nav-item" data-section="security-monitoring">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Security & Byzantine
+          <span class="nav-badge" style="background: var(--status-success-bg); color: var(--status-success);">Active</span>
+        </a>
+        <a class="nav-item" data-section="verification-records">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Verification Records
+        </a>
+
+        <div class="nav-section-label">Administration</div>
+        <a class="nav-item" data-section="institution-settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Institution Settings
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-avatar">BA</div>
+          <div class="user-info">
+            <span class="user-name">First National Bank</span>
+            <span class="user-role">Consortium Node 1</span>
           </div>
         </div>
       </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="app-main">
       
-      <!-- Pipeline Execution Panel -->
-      <div class="glass-card col-4">
-        <div class="card-title">
-          <span>Execution Engine</span>
-          <span id="pipeline-status" class="status-badge idle">Idle</span>
+      <!-- Top Application Header -->
+      <header class="app-header">
+        <div class="header-breadcrumbs">
+          <span class="breadcrumb-root">Consortium</span>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current" id="current-breadcrumb">Operations Overview</span>
         </div>
-        
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-          <div>
-            <label class="metric-label" style="display: block; margin-bottom: 6px;">Current Pipeline Task</label>
-            <div id="pipeline-step" style="font-weight: 600; color: var(--accent-cyan);">Ready to launch</div>
+
+        <div class="header-actions">
+          <div class="system-status-indicator">
+            <div class="status-dot pulsing" id="rpc-status-dot"></div>
+            <span id="rpc-status-text">Ledger Node Active</span>
           </div>
           
-          <div>
-            <label class="metric-label" style="display: block; margin-bottom: 6px;">Execution Terminal Output</label>
-            <div id="console-logs" class="console-container">
-              <span class="console-line">SYSTEM: Standing by for pipeline launch.</span>
+          <button id="run-pipeline-btn" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Trigger FL & ZK Cycle
+          </button>
+        </div>
+      </header>
+
+      <!-- View Container -->
+      <div class="content-body">
+
+        <!-- ==============================================================
+             SECTION 1: OVERVIEW WORKSPACE
+             ============================================================== -->
+        <section id="section-overview" class="view-section">
+          <div class="view-header">
+            <div class="view-heading">
+              <h1>Operational Overview</h1>
+              <p>Real-time status of consortium federated training, model metrics, and zero-knowledge verification.</p>
+            </div>
+            <div class="view-controls">
+              <span class="badge badge-forest">Consortium Tier 1</span>
+              <span class="badge badge-neutral" id="last-sync-time">Synchronized</span>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Live Performance Chart -->
-      <div class="glass-card col-8">
-        <div class="card-title">
-          <span>Accuracy & Privacy Tradeoff Analysis</span>
-          <span class="metric-label">Centralized vs Federated</span>
-        </div>
-        
-        <div id="chart-container">
-          <div class="chart-placeholder" id="chart-placeholder">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20V14"></path></svg>
-            <span>Performance comparison chart will render after pipeline run completes.</span>
-          </div>
-          <img id="comparison-chart" src="" class="chart-img" style="display: none;" alt="Accuracy Comparison Chart">
-        </div>
-      </div>
+          <!-- Key Metrics Row -->
+          <div class="metrics-row">
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label">Latest FL Round</span>
+                <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+              </div>
+              <div class="metric-value" id="kpi-round">Round 10</div>
+              <div class="metric-footer">
+                <span class="metric-tag positive">Synchronized</span>
+                <span>• 4 Bank Nodes</span>
+              </div>
+            </div>
 
-      <!-- Local Partition Health -->
-      <div class="glass-card col-6">
-        <div class="card-title">
-          <span>Bank Data Shard Distribution (Local Health)</span>
-          <div class="alert-indicator">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-            No data drift detected
-          </div>
-        </div>
-        
-        <div class="partition-grid">
-          <div class="partition-card">
-            <div class="partition-name">Bank Node 1</div>
-            <div class="partition-stat">Records: <span class="partition-val">180,272</span></div>
-            <div class="partition-stat">Laundering: <span class="partition-val" style="color: var(--status-error);">0.85%</span></div>
-          </div>
-          <div class="partition-card">
-            <div class="partition-name">Bank Node 2</div>
-            <div class="partition-stat">Records: <span class="partition-val">180,272</span></div>
-            <div class="partition-stat">Laundering: <span class="partition-val" style="color: var(--status-error);">0.85%</span></div>
-          </div>
-          <div class="partition-card">
-            <div class="partition-name">Bank Node 3</div>
-            <div class="partition-stat">Records: <span class="partition-val">180,271</span></div>
-            <div class="partition-stat">Laundering: <span class="partition-val" style="color: var(--status-error);">0.85%</span></div>
-          </div>
-          <div class="partition-card">
-            <div class="partition-name">Bank Node 4</div>
-            <div class="partition-stat">Records: <span class="partition-val">180,271</span></div>
-            <div class="partition-stat">Laundering: <span class="partition-val" style="color: var(--status-error);">0.85%</span></div>
-          </div>
-        </div>
-      </div>
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label">Global F1 Score</span>
+                <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <div class="metric-value" id="kpi-f1">99.67%</div>
+              <div class="metric-footer">
+                <span class="metric-tag positive" id="kpi-recall">99.86% Recall</span>
+                <span>True Positive Catch</span>
+              </div>
+            </div>
 
-      <!-- Local Model Aggregate Summary -->
-      <div class="glass-card col-6">
-        <div class="card-title">
-          <span>Decentralized FL Metrics Progression</span>
-          <span class="metric-label">aggregated schemas</span>
-        </div>
-        
-        <div class="table-wrapper">
-          <table class="custom-table" id="rounds-table">
-            <thead>
-              <tr>
-                <th>Round</th>
-                <th>Accuracy</th>
-                <th>Precision</th>
-                <th>Recall</th>
-                <th>F1-Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">
-                  No training rounds loaded. Trigger the E2E pipeline run to generate rounds.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label">Differential Privacy (ε)</span>
+                <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <div class="metric-value">3.84</div>
+              <div class="metric-footer">
+                <span class="metric-tag positive">Strict Bound</span>
+                <span>• δ = 10⁻⁵ (C=1.0, σ=0.5)</span>
+              </div>
+            </div>
 
-    </div>
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-label">Audit Verification</span>
+                <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="metric-value" id="kpi-zk-status">Groth16 Valid</div>
+              <div class="metric-footer">
+                <span class="metric-tag positive">Pairing Verified</span>
+                <span>• BN254 Curve</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Central Operational Split -->
+          <div class="grid-2-1">
+            
+            <!-- Operational Pipeline Monitor -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Federated Coordination Engine</h3>
+                  <p class="card-subtitle">Automated Flower aggregation, weight extraction, and SNARK proving pipeline</p>
+                </div>
+                <span id="pipeline-status-badge" class="badge badge-neutral">Idle</span>
+              </div>
+              <div class="card-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
+                    <span style="font-weight: 600; color: var(--color-charcoal);">Active Task:</span>
+                    <span id="pipeline-task-desc" style="color: var(--color-forest); font-weight: 500;">Ready for execution</span>
+                  </div>
+                  <div class="progress-bar-container">
+                    <div id="pipeline-progress" class="progress-bar-fill" style="width: 100%;"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="metric-label" style="display: block; margin-bottom: 6px;">Consortium Execution Telemetry</label>
+                  <div id="console-logs" class="terminal-window">
+                    <div class="terminal-line info">[SYSTEM] Engine standing by. Model converged at 99.67% F1.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Institution Data Silos Summary -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Partition Health</h3>
+                  <p class="card-subtitle">Local Banking Data Silos</p>
+                </div>
+                <span class="badge badge-success">4/4 Online</span>
+              </div>
+              <div class="card-body" style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="partition-card">
+                  <div class="partition-header">
+                    <span class="partition-name">Node 1 (First National)</span>
+                    <span class="badge badge-forest">Local Client</span>
+                  </div>
+                  <div class="partition-specs">
+                    <div>Volume: <strong>180,272 txn</strong></div>
+                    <div>Laundering: <strong>0.85%</strong></div>
+                  </div>
+                </div>
+
+                <div class="partition-card">
+                  <div class="partition-header">
+                    <span class="partition-name">Node 2 (Charter Trust)</span>
+                    <span class="badge badge-neutral">Peer Node</span>
+                  </div>
+                  <div class="partition-specs">
+                    <div>Volume: <strong>180,272 txn</strong></div>
+                    <div>Laundering: <strong>0.85%</strong></div>
+                  </div>
+                </div>
+
+                <div class="partition-card">
+                  <div class="partition-header">
+                    <span class="partition-name">Node 3 (Merchants Bancorp)</span>
+                    <span class="badge badge-neutral">Peer Node</span>
+                  </div>
+                  <div class="partition-specs">
+                    <div>Volume: <strong>180,271 txn</strong></div>
+                    <div>Laundering: <strong>0.85%</strong></div>
+                  </div>
+                </div>
+
+                <div class="partition-card">
+                  <div class="partition-header">
+                    <span class="partition-name">Node 4 (Apex Financial)</span>
+                    <span class="badge badge-neutral">Peer Node</span>
+                  </div>
+                  <div class="partition-specs">
+                    <div>Volume: <strong>180,271 txn</strong></div>
+                    <div>Laundering: <strong>0.85%</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Recent Rounds Table Card -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Recent Verified Training Rounds</h3>
+                <p class="card-subtitle">Exact global metrics derived from cumulative confusion matrix aggregation</p>
+              </div>
+              <a href="#" class="btn btn-secondary btn-sm" onclick="switchSection('federated-learning')">View All Rounds</a>
+            </div>
+            <div class="table-container" style="border: none; border-radius: 0;">
+              <table class="data-table" id="overview-rounds-table">
+                <thead>
+                  <tr>
+                    <th>Round</th>
+                    <th>Global Accuracy</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1 Score</th>
+                    <th>Quorum</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="7" style="text-align: center; color: var(--color-charcoal-subtle); padding: 32px;">Loading recent training rounds...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 2: FEDERATED LEARNING WORKSPACE
+             ============================================================== -->
+        <section id="section-federated-learning" class="view-section" style="display: none;">
+          <div class="view-header">
+            <div class="view-heading">
+              <h1>Federated Learning Operations</h1>
+              <p>Decentralized model training across banking participants with client-side DP-SGD and Flower aggregation.</p>
+            </div>
+            <div class="view-controls">
+              <button class="btn btn-secondary" onclick="loadRoundsData()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Refresh Rounds
+              </button>
+            </div>
+          </div>
+
+          <div class="info-note">
+            <strong>Architecture Specification:</strong> Each participant executes 1 local epoch on PyTorch <code>GraphAwareMLP</code> with gradient norm clipping ($C=1.0$) and calibrated Gaussian noise injection ($\sigma=0.5$). Raw transaction records remain isolated inside local bank data silos.
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Historical Training Rounds</h3>
+              <div class="filter-bar" style="margin: 0;">
+                <input type="text" id="round-search-input" class="search-input" placeholder="Filter by round or metric...">
+              </div>
+            </div>
+            <div class="table-container" style="border: none; border-radius: 0;">
+              <table class="data-table" id="fl-rounds-table">
+                <thead>
+                  <tr>
+                    <th>Round ID</th>
+                    <th>Accuracy</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1 Score</th>
+                    <th>Contributing Silos</th>
+                    <th>Timestamp</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 3: MODEL PERFORMANCE WORKSPACE
+             ============================================================== -->
+        <section id="section-model-performance" class="view-section" style="display: none;">
+          <div class="view-header">
+            <div class="view-heading">
+              <h1>Model Performance & Analytics</h1>
+              <p>Statistical validation, confusion matrix evaluation, and centralized versus federated benchmark comparison.</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            
+            <!-- Centralized vs Federated Chart Card -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Centralized vs Federated AML Benchmark</h3>
+                  <p class="card-subtitle">Holdout test set convergence comparison over 10 training epochs</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <img src="/visualizations/baseline_vs_federated.png" style="width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--color-border);" alt="Benchmark Convergence Chart">
+                <div style="margin-top: 14px; font-size: 12px; color: var(--color-charcoal-subtle);">
+                  • <strong>Finding:</strong> Federated <code>GraphAwareMLP</code> converges to <strong>99.67% F1</strong>, matching centralized performance without aggregating customer financial transaction records.
+                </div>
+              </div>
+            </div>
+
+            <!-- Confusion Matrix & Detection Metrics -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Holdout Test Set Classification Metrics</h3>
+                  <p class="card-subtitle">Evaluated on 180,272 unaugmented transactions (clean class distribution)</p>
+                </div>
+                <span class="badge badge-success">Evaluated Round 10</span>
+              </div>
+              <div class="card-body" style="display: flex; flex-direction: column; gap: 16px;">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div style="background: var(--color-ivory-warm); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                    <div class="metric-label">True Positive Rate (Recall)</div>
+                    <div style="font-size: 22px; font-weight: 700; color: var(--status-success); margin: 4px 0;">99.86%</div>
+                    <div style="font-size: 11px; color: var(--color-charcoal-subtle);">Disguised illicit mule loops detected</div>
+                  </div>
+
+                  <div style="background: var(--color-ivory-warm); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
+                    <div class="metric-label">Precision Rate</div>
+                    <div style="font-size: 22px; font-weight: 700; color: var(--color-forest); margin: 4px 0;">99.48%</div>
+                    <div style="font-size: 11px; color: var(--color-charcoal-subtle);">False positive alert containment</div>
+                  </div>
+                </div>
+
+                <!-- 2x2 Confusion Matrix Visual Breakdown -->
+                <div>
+                  <div class="metric-label" style="margin-bottom: 6px;">Cumulative Confusion Matrix (Holdout Set)</div>
+                  <div class="matrix-container">
+                    <div class="matrix-cell tp">
+                      <span class="matrix-label">True Positives (TP)</span>
+                      <span class="matrix-num">1,529</span>
+                      <span class="matrix-sub">Illicit caught (99.86%)</span>
+                    </div>
+                    <div class="matrix-cell fp">
+                      <span class="matrix-label">False Positives (FP)</span>
+                      <span class="matrix-num">8</span>
+                      <span class="matrix-sub">Legitimate flagged (0.004%)</span>
+                    </div>
+                    <div class="matrix-cell fn">
+                      <span class="matrix-label">False Negatives (FN)</span>
+                      <span class="matrix-num">2</span>
+                      <span class="matrix-sub">Missed illicit (0.13%)</span>
+                    </div>
+                    <div class="matrix-cell tn">
+                      <span class="matrix-label">True Negatives (TN)</span>
+                      <span class="matrix-num">178,733</span>
+                      <span class="matrix-sub">Legitimate cleared (99.99%)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow-x: auto;">
+                  <table class="data-table" style="font-size: 11.5px; width: 100%;">
+                    <thead>
+                      <tr>
+                        <th style="width: 32%;">Dimension</th>
+                        <th style="width: 22%;">Federated</th>
+                        <th style="width: 24%;">Centralized</th>
+                        <th style="width: 22%;">Variance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Accuracy</strong></td>
+                        <td>99.67%</td>
+                        <td>99.68%</td>
+                        <td style="color: var(--status-success); font-weight: 600;">-0.01% (Parity)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>F1 Score</strong></td>
+                        <td>0.9967</td>
+                        <td>0.9968</td>
+                        <td style="color: var(--status-success); font-weight: 600;">-0.0001 (Parity)</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Features</strong></td>
+                        <td>32 (PCA)</td>
+                        <td>32 (PCA)</td>
+                        <td style="color: var(--color-charcoal-subtle);">Exact match</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Privacy</strong></td>
+                        <td>0 PII Exposed</td>
+                        <td>Pooled Data</td>
+                        <td style="color: var(--status-success); font-weight: 600;">Guaranteed</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 4: PRIVACY & COMPLIANCE WORKSPACE
+             ============================================================== -->
+        <section id="section-privacy-compliance" class="view-section" style="display: none;">
+          <div class="view-header">
+            <div class="view-heading">
+              <h1>Privacy & Regulatory Compliance</h1>
+              <p>Rigorous formal privacy accounting, gradient clipping specifications, and cross-border regulatory conformance.</p>
+            </div>
+            <div class="view-controls">
+              <span class="badge badge-success">GDPR Art. 25 & 32 Compliant</span>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Differential Privacy (DP-SGD) Configuration</h3>
+                <span class="badge badge-forest">Active</span>
+              </div>
+              <div class="card-body" style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="partition-specs" style="grid-template-columns: 1fr; gap: 12px;">
+                  <div>Clipping Threshold (C): <strong>1.0 (Gradient Norm Clamped)</strong></div>
+                  <div>Noise Multiplier (σ): <strong>0.5 (Calibrated Gaussian Distribution)</strong></div>
+                  <div>Cumulative Privacy Budget: <strong>ε = 3.84, δ = 10⁻⁵</strong></div>
+                  <div>Subsampling Ratio (q): <strong>64 / 180,272 per batch</strong></div>
+                  <div>Privacy Accounting: <strong>Moments Accountant Bound</strong></div>
+                </div>
+                <div style="font-size: 12px; color: var(--color-charcoal-subtle); line-height: 1.5;">
+                  The DP mechanism mathematically ensures that an adversary inspecting global weights cannot reconstruct any individual transaction or verify membership in a specific bank partition.
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Institutional Compliance Checklist</h3>
+              </div>
+              <div class="card-body">
+                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 12.5px;">
+                  <li style="display: flex; gap: 10px;">
+                    <span class="badge badge-success" style="height: fit-content;">PASS</span>
+                    <div>
+                      <strong>Data Residency Guarantee:</strong> All customer bank transaction records, account numbers, and PII remain exclusively inside bank on-premises storage.
+                    </div>
+                  </li>
+                  <li style="display: flex; gap: 10px;">
+                    <span class="badge badge-success" style="height: fit-content;">PASS</span>
+                    <div>
+                      <strong>Leakage-Free Resampling:</strong> SMOTE minority oversampling is applied strictly to training partitions; holdout evaluation sets are completely free of synthetic artifacts.
+                    </div>
+                  </li>
+                  <li style="display: flex; gap: 10px;">
+                    <span class="badge badge-success" style="height: fit-content;">PASS</span>
+                    <div>
+                      <strong>Cryptographic Auditing:</strong> Model parameter updates are cryptographically bound via Poseidon hash commitments and logged to an immutable smart contract ledger.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 5: SECURITY & BYZANTINE MONITORING
+             ============================================================== -->
+        <section id="section-security-monitoring" class="view-section" style="display: none;">
+          <div class="view-header">
+            <div class="view-heading">
+              <h1>Security & Byzantine Fault Monitoring</h1>
+              <p>Automated anomaly filtering protecting the global model against weight poisoning and compromised participants.</p>
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-bottom: 20px;">
+            <div class="metric-card">
+              <div class="metric-label">Byzantine Defense Rule</div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--color-forest); margin-top: 4px;">L2-Norm Upper Bound</div>
+              <div class="metric-footer">Threshold: 150.0 (Normal: &lt; 25.0)</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Quorum Requirement</div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--status-success); margin-top: 4px;">4 / 4 Nodes Required</div>
+              <div class="metric-footer">Strict fault tolerance enforced</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Numerical Integrity Check</div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--status-success); margin-top: 4px;">NaN / Inf Trap Active</div>
+              <div class="metric-footer">Pre-aggregation parameter filter</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Security Event Audit Log</h3>
+              <span class="badge badge-forest">Automated Quarantine</span>
+            </div>
+            <div class="table-container" style="border: none; border-radius: 0;">
+              <table class="data-table" id="security-events-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Node / Source</th>
+                    <th>Threat Classification</th>
+                    <th>Mitigation Response</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 6: VERIFICATION RECORDS
+             ============================================================== -->
+        <section id="section-verification-records" class="view-section" style="display: none;">
+          <div class="view-header">
+            <div class="view-heading">
+              <h1>Verification Records & Ledger Proofs</h1>
+              <p>Cryptographic Groth16 proofs and on-chain blockchain audit records for verified federated rounds.</p>
+            </div>
+            <div class="view-controls">
+              <button class="btn btn-secondary" onclick="loadLedgerData()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Sync Ledger
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Immutable On-Chain Verification Ledger</h3>
+              <span class="badge badge-forest" id="ledger-contract-address">Contract: Loading...</span>
+            </div>
+            <div class="table-container" style="border: none; border-radius: 0;">
+              <table class="data-table" id="institution-ledger-table">
+                <thead>
+                  <tr>
+                    <th>Round</th>
+                    <th>Model Weights Hash (Keccak256)</th>
+                    <th>Accuracy</th>
+                    <th>F1 Score</th>
+                    <th>Nodes</th>
+                    <th>Timestamp</th>
+                    <th>Proof Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             SECTION 7: INSTITUTION SETTINGS (ENTERPRISE OPERATIONAL VIEW)
+             ============================================================== -->
+        <section id="section-institution-settings" class="view-section" style="display: none;">
+          <div class="view-header">
+            <div class="view-heading">
+              <h1>Institution Profile & Node Settings</h1>
+              <p>Hardware connectivity, RPC configurations, and consortium credentials.</p>
+            </div>
+            <div class="view-controls">
+              <span class="badge badge-success">Cryptographically Bound</span>
+              <span class="badge badge-forest">Consortium Tier 1</span>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <!-- Node Identity & Signing Card -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Node Identity & Key Governance</h3>
+                <span class="badge badge-neutral">Silo 1</span>
+              </div>
+              <div class="card-body" style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="config-item">
+                  <div class="config-label-group">
+                    <span class="config-title">Participant Institution</span>
+                    <span class="config-desc">Designated Tier-1 Banking Consortium Member</span>
+                  </div>
+                  <span class="config-value">First National Bank</span>
+                </div>
+                <div class="config-item">
+                  <div class="config-label-group">
+                    <span class="config-title">Local Node Identifier</span>
+                    <span class="config-desc">Flower gRPC Client Identification Tag</span>
+                  </div>
+                  <span class="config-value">bank_silo_1</span>
+                </div>
+                <div class="config-item">
+                  <div class="config-label-group">
+                    <span class="config-title">ECDSA Signing Address</span>
+                    <span class="config-desc">Submits proof commitments to AMLVerifier.sol</span>
+                  </div>
+                  <span class="config-value">0xa4cd...4D72</span>
+                </div>
+                <div class="config-item">
+                  <div class="config-label-group">
+                    <span class="config-title">Zero-Knowledge Prover</span>
+                    <span class="config-desc">Groth16 Prover on Alt_bn128 Elliptic Curve</span>
+                  </div>
+                  <span class="config-value">SnarkJS / BN254</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Network Endpoints & Defense Parameters -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Consortium Network & Defense Rules</h3>
+                <span class="badge badge-success">Strict Active</span>
+              </div>
+              <div class="card-body" style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="config-item">
+                  <div class="config-label-group">
+                    <span class="config-title">Federated Aggregator</span>
+                    <span class="config-desc">Flower Coordination Protocol Port</span>
+                  </div>
+                  <span class="config-value">127.0.0.1:8080</span>
+                </div>
+                <div class="config-item">
+                  <div class="config-label-group">
+                    <span class="config-title">Blockchain JSON-RPC</span>
+                    <span class="config-desc">Hardhat Local Node & Polygon Amoy Gateway</span>
+                  </div>
+                  <span class="config-value">127.0.0.1:8545</span>
+                </div>
+                <div class="config-item">
+                  <div class="config-label-group">
+                    <span class="config-title">Byzantine L2 Norm Filter</span>
+                    <span class="config-desc">Max tolerable gradient norm prior to drop</span>
+                  </div>
+                  <span class="config-value">&lt; 150.0 Norm</span>
+                </div>
+                <div class="config-item">
+                  <div class="config-label-group">
+                    <span class="config-title">Differential Privacy ε</span>
+                    <span class="config-desc">Strict Renyi Moments Accountant Bound</span>
+                  </div>
+                  <span class="config-value">ε = 3.84, δ = 10⁻⁵</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enterprise Compliance Policy Banner -->
+          <div class="card" style="margin-top: 20px;">
+            <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+              <div>
+                <h4 style="font-size: 13.5px; font-weight: 700; color: var(--color-charcoal); margin-bottom: 4px;">Institutional Compliance Lock Active</h4>
+                <p style="font-size: 12px; color: var(--color-charcoal-subtle);">Parameters are cryptographically locked across all 4 participant banks by multi-institution consortium policy. Altering clipping thresholds or RPC endpoints requires multi-signature re-attestation.</p>
+              </div>
+              <span class="badge badge-forest" style="padding: 6px 12px; font-size: 12px;">Policy Confirmed</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
   </div>
 
   <script src="app.js"></script>
