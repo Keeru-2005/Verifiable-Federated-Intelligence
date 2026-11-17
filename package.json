@@ -15,7 +15,7 @@
     "blockchain:deploy": "cd blockchain && npx hardhat run scripts/deploy.js --network localhost",
     "blockchain:submit": "cd blockchain && npx hardhat run scripts/submit_proof.js --network localhost",
     "zk:verify": "node zkp/verify_proof.js",
-    "zk:input": "node zkp/circuit/generate_circuit_input.js clients.json 1",
+    "zk:input": "node zkp/circuit/prepare_selected_round_input.js",
     "test:stress": "python3 evaluation/stress_test.py",
     "test:graph": "python3 fl_implementation/test_graph_integration.py",
     "metrics": "python3 evaluation/benchmark_metrics.py"

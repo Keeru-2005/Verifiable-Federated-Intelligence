@@ -54,6 +54,7 @@ env/
 venv/
 .idea/
 .vscode/
+capstone_env/
 
 # Node.js and Hardhat
 node_modules/
@@ -62,3 +63,5 @@ blockchain/artifacts/
 blockchain/cache/
 fl_implementation/__pycache__/
 schemas/
+fl_implementation/privacy_accountant_*.json
+zkp/circuit/private_inputs/

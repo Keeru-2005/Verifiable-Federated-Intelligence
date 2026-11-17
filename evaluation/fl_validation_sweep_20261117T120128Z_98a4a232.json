@@ -1,0 +1,233 @@
+{
+  "sweep_id": "20261117T120128Z_98a4a232",
+  "run_id": "abc4b575614845cdb99a25f3f91aa979",
+  "selection": "mean_best_validation_f1_across_seeds",
+  "screening_rounds": 10,
+  "final_rounds": 10,
+  "local_epochs": 1,
+  "candidates": [
+    {
+      "positive_loss_weight": 10.0,
+      "noise_multiplier": 0.5,
+      "learning_rate": 0.002,
+      "fedprox_mu": 0.0,
+      "dp_enabled": true,
+      "seed": 42,
+      "best_validation": {
+        "round": 10,
+        "f1": 0.7146171693735499,
+        "precision": 0.719626168224299,
+        "recall": 0.7096774193548387,
+        "average_precision": 0.7114623604864981,
+        "decision_threshold": 0.0023786225356161594,
+        "tp": 154,
+        "fp": 60,
+        "fn": 63,
+        "client_fit_summary": {
+          "dp_enabled_clients": 4,
+          "max_client_epsilon": 7.752135362114015,
+          "delta": 1e-05,
+          "dp_accountant": "rdp",
+          "dp_rng_mode": "standard_prng_demo_only"
+        }
+      },
+      "round_metrics": [
+        {
+          "round": 1,
+          "f1": 0.2571428571428572,
+          "precision": 0.3383458646616541,
+          "recall": 0.2073732718894009,
+          "average_precision": 0.2044747675912512,
+          "decision_threshold": 0.0013129677390679717,
+          "tp": 45,
+          "fp": 88,
+          "fn": 172,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 4.96276906993459,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 2,
+          "f1": 0.47802197802197804,
+          "precision": 0.5918367346938775,
+          "recall": 0.4009216589861751,
+          "average_precision": 0.4022203418695628,
+          "decision_threshold": 0.0019647858571261168,
+          "tp": 87,
+          "fp": 60,
+          "fn": 130,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 5.492499922464835,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 3,
+          "f1": 0.6015831134564643,
+          "precision": 0.7037037037037037,
+          "recall": 0.5253456221198156,
+          "average_precision": 0.5425273180268311,
+          "decision_threshold": 0.0015746024437248707,
+          "tp": 114,
+          "fp": 48,
+          "fn": 103,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 5.8893335432210865,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 4,
+          "f1": 0.6417112299465241,
+          "precision": 0.7643312101910829,
+          "recall": 0.5529953917050692,
+          "average_precision": 0.5936217728647208,
+          "decision_threshold": 0.002079544123262167,
+          "tp": 120,
+          "fp": 37,
+          "fn": 97,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 6.23771432516197,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 5,
+          "f1": 0.6564885496183206,
+          "precision": 0.7329545454545454,
+          "recall": 0.5944700460829493,
+          "average_precision": 0.6095233437167608,
+          "decision_threshold": 0.0012194715673103929,
+          "tp": 129,
+          "fp": 47,
+          "fn": 88,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 6.528092023370918,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 6,
+          "f1": 0.6666666666666666,
+          "precision": 0.774390243902439,
+          "recall": 0.5852534562211982,
+          "average_precision": 0.6457197415844154,
+          "decision_threshold": 0.0019103187369182706,
+          "tp": 127,
+          "fp": 37,
+          "fn": 90,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 6.818469721579866,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 7,
+          "f1": 0.7012987012987013,
+          "precision": 0.8035714285714286,
+          "recall": 0.6221198156682027,
+          "average_precision": 0.6798451459356091,
+          "decision_threshold": 0.004625395406037569,
+          "tp": 135,
+          "fp": 33,
+          "fn": 82,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 7.059777419700212,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 8,
+          "f1": 0.7122641509433962,
+          "precision": 0.7294685990338164,
+          "recall": 0.695852534562212,
+          "average_precision": 0.6986445844322329,
+          "decision_threshold": 0.0008643269538879395,
+          "tp": 151,
+          "fp": 56,
+          "fn": 66,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 7.2994275992060516,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 9,
+          "f1": 0.695067264573991,
+          "precision": 0.6768558951965066,
+          "recall": 0.7142857142857143,
+          "average_precision": 0.6960405163148559,
+          "decision_threshold": 0.0007418737513944507,
+          "tp": 155,
+          "fp": 74,
+          "fn": 62,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 7.539077778711891,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 10,
+          "f1": 0.7146171693735499,
+          "precision": 0.719626168224299,
+          "recall": 0.7096774193548387,
+          "average_precision": 0.7114623604864981,
+          "decision_threshold": 0.0023786225356161594,
+          "tp": 154,
+          "fp": 60,
+          "fn": 63,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 7.752135362114015,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        }
+      ],
+      "artifact_dir": "C:\\Users\\keeru\\Capstone work\\project\\Verifiable-Federated-Intelligence\\Verifiable-Federated-Intelligence\\schemas\\validation_sweeps\\abc4b575614845cdb99a25f3f91aa979_20261117T120128Z_98a4a232\\sweep1_seed42"
+    }
+  ],
+  "selected_dp_configuration": {
+    "positive_loss_weight": 10.0,
+    "noise_multiplier": 0.5,
+    "learning_rate": 0.002,
+    "fedprox_mu": 0.0,
+    "dp_enabled": true,
+    "mean_best_validation_f1": 0.7146171693735499,
+    "seeds": [
+      42
+    ]
+  },
+  "no_dp_diagnostic": [],
+  "final_test_once": null,
+  "note": "The no-DP condition is a diagnostic only. All candidate selection used validation data; final test metrics were read only after choosing the DP configuration."
+}

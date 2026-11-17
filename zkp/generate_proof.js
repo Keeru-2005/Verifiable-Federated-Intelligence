@@ -10,7 +10,8 @@ const snarkjs = require("snarkjs");
 async function generateProof(inputPath = null, roundNumber = 1) {
     const projectRoot = path.resolve(__dirname, "..");
     const circuitDir = path.join(projectRoot, "zkp", "circuit");
-    const schemasDir = path.join(projectRoot, "schemas");
+    // Allow tests (and alternate runs) to keep canonical schemas/ untouched.
+    const schemasDir = process.env.VFI_SCHEMAS_DIR || path.join(projectRoot, "schemas");
     
     if (!inputPath) {
         inputPath = path.join(circuitDir, "input.json");
@@ -37,6 +38,19 @@ async function generateProof(inputPath = null, roundNumber = 1) {
     console.log(`[SECURE] Generating Groth16 ZK-SNARK Proof from ${inputPath}...`);
     const inputData = JSON.parse(fs.readFileSync(inputPath, "utf8"));
     const round = parseInt(inputData.roundNumber || roundNumber || "1");
+    if (round !== Number(roundNumber)) {
+        throw new Error(`Input round ${round} does not match requested proof round ${roundNumber}.`);
+    }
+    const contextPath = path.join(path.dirname(inputPath), "context.json");
+    if (!fs.existsSync(contextPath)) {
+        throw new Error("Proof context is missing; generate input through the exact-round exporter.");
+    }
+    const proofContext = JSON.parse(fs.readFileSync(contextPath, "utf8"));
+    if (Number(proofContext.round) !== round ||
+        String(proofContext.totalSamples) !== String(inputData.totalSamples) ||
+        !proofContext.run_id) {
+        throw new Error("Private proof context does not match the circuit input.");
+    }
 
     const startTime = Date.now();
     const { proof, publicSignals } = await snarkjs.groth16.fullProve(
@@ -44,8 +58,13 @@ async function generateProof(inputPath = null, roundNumber = 1) {
         wasmPath,
         zkeyPath
     );
+    if (publicSignals.length !== 3 ||
+        String(publicSignals[1]) !== String(round) ||
+        String(publicSignals[2]) !== String(inputData.totalSamples)) {
+        throw new Error("Circuit public signals do not bind the requested round and total sample count.");
+    }
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.log(`[TIME]️ Proof generated in ${duration}s`);
+    console.log(`[TIME] Proof generated in ${duration}s`);
 
     // Verify cryptographic validity immediately
     if (fs.existsSync(vkeyPath)) {
@@ -67,7 +86,11 @@ async function generateProof(inputPath = null, roundNumber = 1) {
     const formattedProof = {
         proof: proof,
         publicSignals: publicSignals,
+        public_signal_order: ["globalCommitment", "roundNumber", "totalSamples"],
         round_reference: round,
+        run_id: proofContext.run_id,
+        total_samples: String(inputData.totalSamples),
+        output_layer_commitment: String(publicSignals[0]),
         circuit_hash: circuitHash,
         proving_time_sec: parseFloat(duration)
     };

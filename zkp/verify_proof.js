@@ -6,7 +6,8 @@ async function main() {
 
   // 1. Resolve paths
   const projectRoot = path.join(__dirname, "..");
-  const proofPath = path.join(projectRoot, "schemas", "proof.json");
+  // Allow tests to verify a temporary proof without touching schemas/proof.json.
+  const proofPath = process.env.VFI_PROOF_PATH || path.join(projectRoot, "schemas", "proof.json");
   const vKeyPath = path.join(projectRoot, "zkp", "circuit", "verification_key.json");
 
   // 2. Load proof.json

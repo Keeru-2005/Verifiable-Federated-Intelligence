@@ -69,9 +69,8 @@ async function runDemo() {
     } else {
         info('AMLNet transaction dataset partition identified.');
     }
-    success('StandardScaler feature normalization applied');
-    success('SMOTE 50:50 & 30:70 class balancing completed (synthetic minority oversampling)');
-    success('PCA dimensionality reduction confirmed: 32 principal components retained');
+    success('StandardScaler + PCA fitted on the training split only (32 components)');
+    success('SMOTE is applied per client to local training rows only; bank shards and holdout stay natural (pre-SMOTE)');
     await sleep(500);
 
     // ------------------------------------------------------------------------
@@ -90,12 +89,12 @@ async function runDemo() {
         const shardPath = path.join(bankDir, bankFiles[i]);
         if (fs.existsSync(shardPath)) {
             const sizeMB = (fs.statSync(shardPath).size / 1024 / 1024).toFixed(1);
-            success(`Bank ${String.fromCharCode(65 + i)} Silo: fl_implementation/data/${bankFiles[i]} (~180,272 records | ${sizeMB} MB)`);
+            success(`Bank ${String.fromCharCode(65 + i)} Silo: fl_implementation/data/${bankFiles[i]} (natural training shard | ${sizeMB} MB)`);
         }
     }
     const holdoutPath = path.join(bankDir, 'global_test.csv');
     if (fs.existsSync(holdoutPath)) {
-        success('Global Holdout Evaluation Set: fl_implementation/data/global_test.csv (~180,272 records)');
+        success('Global Holdout Evaluation Set: fl_implementation/data/global_test.csv (untouched, naturally imbalanced)');
     }
     info('Privacy Guarantee: Raw transactions remain strictly local within bank silos.');
     await sleep(500);
@@ -131,42 +130,50 @@ async function runDemo() {
             return numA - numB;
         });
 
-    let finalAccuracy = '99.67%';
-    let finalF1 = '0.9967';
-    let finalPrecision = '99.48%';
-    let finalRecall = '99.87%';
+    const latestRound = roundFiles.length
+        ? parseInt(roundFiles[roundFiles.length - 1].match(/\d+/)[0], 10)
+        : 1;
+
+    let finalAccuracy = 'n/a';
+    let finalF1 = 'n/a';
+    let finalPrecision = 'n/a';
+    let finalRecall = 'n/a';
+    const fmtPct = v => (Number.isFinite(v) ? `${(v * 100).toFixed(2)}%` : 'n/a');
+    const fmtNum = v => (Number.isFinite(v) ? v.toFixed(4) : 'n/a');
 
     if (roundFiles.length > 0) {
         console.log(`\n  ${BOLD}${'Round'.padEnd(8)} | ${'Accuracy'.padEnd(12)} | ${'Precision'.padEnd(12)} | ${'Recall'.padEnd(12)} | ${'F1-Score'.padEnd(10)}${RESET}`);
         console.log(`  ${DIM}----------------------------------------------------------------------${RESET}`);
 
-        roundFiles.forEach(rf => {
+        roundFiles.forEach((rf, idx) => {
             try {
                 const roundData = JSON.parse(fs.readFileSync(path.join(SCHEMAS_DIR, rf), 'utf8'));
                 const m = roundData.metrics || {};
                 const rNum = String(roundData.round || rf.match(/\d+/)[0]).padEnd(8);
-                const acc = `${((m.accuracy || 0.98) * 100).toFixed(2)}%`.padEnd(12);
-                const prec = `${((m.precision || 0.99) * 100).toFixed(2)}%`.padEnd(12);
-                const rec = `${((m.recall || 0.96) * 100).toFixed(2)}%`.padEnd(12);
-                const f1 = `${(m.f1 || 0.98).toFixed(4)}`.padEnd(10);
+                const acc = fmtPct(m.accuracy).padEnd(12);
+                const prec = fmtPct(m.precision).padEnd(12);
+                const rec = fmtPct(m.recall).padEnd(12);
+                const f1 = fmtNum(m.f1).padEnd(10);
                 console.log(`  ${rNum} | ${acc} | ${prec} | ${rec} | ${GREEN}${f1}${RESET}`);
 
-                if (roundData.round === 10 || rf.includes('10')) {
-                    finalAccuracy = `${((m.accuracy || 0.9967) * 100).toFixed(2)}%`;
-                    finalF1 = (m.f1 || 0.9967).toFixed(4);
-                    finalPrecision = `${((m.precision || 0.9948) * 100).toFixed(2)}%`;
-                    finalRecall = `${((m.recall || 0.9987) * 100).toFixed(2)}%`;
+                if (idx === roundFiles.length - 1) {
+                    finalAccuracy = fmtPct(m.accuracy);
+                    finalF1 = fmtNum(m.f1);
+                    finalPrecision = fmtPct(m.precision);
+                    finalRecall = fmtPct(m.recall);
                 }
             } catch (e) {}
         });
         console.log(`  ${DIM}----------------------------------------------------------------------${RESET}`);
     }
 
-    console.log(`\n  [RESULT] ${BOLD}Actual Global AML Model Performance (Dynamic Results):${RESET}`);
+    console.log(`\n  [RESULT] ${BOLD}Leak-free holdout metrics (centralized_untouched_holdout):${RESET}`);
     console.log(`     Accuracy  : ${GREEN}${BOLD}${finalAccuracy}${RESET}`);
     console.log(`     F1 Score  : ${GREEN}${BOLD}${finalF1}${RESET}`);
-    console.log(`     Recall    : ${GREEN}${BOLD}${finalRecall}${RESET} (High true-positive AML detection rate)`);
+    console.log(`     Recall    : ${GREEN}${BOLD}${finalRecall}${RESET}`);
     console.log(`     Precision : ${GREEN}${BOLD}${finalPrecision}${RESET}`);
+    console.log(`     ${DIM}Counts and confusion matrix are in schemas/global_model_round_*.json.${RESET}`);
+    console.log(`     ${DIM}No fixed headline score is hardcoded: the old 99.67% figure was invalidated by target leakage.${RESET}`);
 
     const checkpointPath = path.join(PROJECT_ROOT, 'fl_implementation', 'model.pt');
     if (fs.existsSync(checkpointPath)) {
@@ -178,15 +185,15 @@ async function runDemo() {
     // [5] GENERATED MODEL WEIGHTS & QUANTIZATION
     // ------------------------------------------------------------------------
     section('5', 'GENERATED MODEL WEIGHTS & QUANTIZATION');
-    info('Extracting model weights from schemas/global_model_round_1.json');
+    info(`Extracting model weights from the final round (schemas/global_model_round_${latestRound}.json)`);
     info('Floating-point to fixed-point quantization (scale factor: 1e6, offset: 2^32)');
 
     try {
         const inputGenScript = path.join(ZKP_DIR, 'circuit', 'generate_circuit_input.js');
         const clientsJsonPath = path.join(PROJECT_ROOT, 'clients.json');
         if (fs.existsSync(inputGenScript) && fs.existsSync(clientsJsonPath)) {
-            execSync(`node "${inputGenScript}" "${clientsJsonPath}" 1`, { cwd: PROJECT_ROOT, stdio: 'pipe' });
-            success('Quantized circuit inputs generated: input.json (4 clients, 33 parameters, 721,086 samples)');
+            execSync(`node "${inputGenScript}" "${clientsJsonPath}" ${latestRound}`, { cwd: PROJECT_ROOT, stdio: 'pipe' });
+            success('Quantized circuit inputs generated: input.json (4 clients, model parameter vector)');
         }
     } catch (err) {
         info('Quantization pipeline executed.');
@@ -217,7 +224,8 @@ async function runDemo() {
         success('Groth16 Proof generated: schemas/proof.json');
         info(`Circuit Hash: ${proofObj.circuit_hash || '0x19f12a04781bba1340483dda53dc493243c57b'}`);
         info(`Public Signals: [ ${proofObj.publicSignals ? proofObj.publicSignals.join(', ') : '1, 0, 1023984029384029384'} ]`);
-        info('ZKP Generation Duration: approximately ~0.72 seconds per round');
+        const provingTime = proofObj.proving_time_sec;
+        info(`ZKP Generation Duration: ${typeof provingTime === 'number' ? `~${provingTime.toFixed(2)} seconds for this run` : 'approximately ~3 seconds per round (measured 1.7-4.0 s)'}`);
     }
     await sleep(500);
 
@@ -301,13 +309,13 @@ async function runDemo() {
   ${BOLD}"80% of the Verifiable Federated Intelligence (VFI) platform is fully operational, integrating decentralized FL, graph neural networks, zero-knowledge proofs, on-chain smart contract verification, differential privacy, and real-time regulatory compliance."${RESET}
 
   ${GREEN}${BOLD}COMPLETED & DEMONSTRATED TODAY (80% SCOPE):${RESET}
-    ${GREEN}[OK]${RESET} [1] Data Preprocessing & Class Balancing: SMOTE 50:50/30:70, StandardScaler, PCA (32 features)
+    ${GREEN}[OK]${RESET} [1] Data Preprocessing: train-only graph/scaler/PCA fitting, natural shards (SMOTE applied per client)
     ${GREEN}[OK]${RESET} [2] Graph Topological Feature Extraction: Temporal graph PageRank, node degrees, clustering coefficients
-    ${GREEN}[OK]${RESET} [3] Graph Neural Network Integration: GAT node embeddings linked to GraphAwareMLP classifier
+    ${GREEN}[OK]${RESET} [3] Graph Neural Network Integration: GAT fit on training labels only, frozen for holdout transform
     ${GREEN}[OK]${RESET} [4] 4-Bank Decentralized Federated Learning: Flower client/server architecture with EarlyStoppingFedAvg
-    ${GREEN}[OK]${RESET} [5] High-Accuracy Global AML Detection: Converged across 10 rounds to 99.67% F1-score & 99.87% recall
+    ${GREEN}[OK]${RESET} [5] Leak-Free Holdout Evaluation: counts + confusion matrix per round; full-scale rerun completed (best F1 0.6169)
     ${GREEN}[OK]${RESET} [6] Neural Parameter Quantization: Fixed-point field element transformation (1e6 scale, 2^32 offset)
-    ${GREEN}[OK]${RESET} [7] ZK Proof Generation: Circom circuit with Poseidon cryptographic hash commitment (~3.52s proving)
+    ${GREEN}[OK]${RESET} [7] ZK Proof Generation: Circom circuit with Poseidon cryptographic hash commitment (~3 s proving; 1.7-4.0 s measured)
     ${GREEN}[OK]${RESET} [8] Dual-Layer ZK Verification: snarkjs pairing validation & EVM Groth16Verifier alt_bn128 precompile checks
     ${GREEN}[OK]${RESET} [9] On-Chain Blockchain Auditability: Immutable round logging on Polygon Amoy (AMLVerifier.sol)
     ${GREEN}[OK]${RESET} [10] Differential Privacy Baseline: (ε, δ)-DP gradient norm clipping & calibrated Gaussian noise bounds

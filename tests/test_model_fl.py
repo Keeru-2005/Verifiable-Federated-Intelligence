@@ -13,8 +13,37 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from models.mlp import GraphAwareMLP
-from fl_implementation.client import AMLClient, compute_dp_budget
+from fl_implementation.client import (
+    AMLClient,
+    _load_privacy_accountant_state,
+    _save_privacy_accountant_state,
+    compute_dp_budget,
+)
 from fl_implementation.server import exact_metric_aggregation
+
+
+@pytest.fixture(scope="module", autouse=True)
+def isolate_round_exports(tmp_path_factory):
+    """Keep direct ``aggregate_fit`` calls from overwriting canonical schemas/.
+
+    The Byzantine-filter tests invoke the real strategy, which exports a
+    ``global_model_round_N.json`` (and ``model.pt``). Redirect those side effects
+    so the documented leak-free run artifacts are never replaced by test data.
+    """
+    previous_schemas = os.environ.get("VFI_SCHEMAS_DIR")
+    previous_model = os.environ.get("VFI_MODEL_PATH")
+    temp_dir = tmp_path_factory.mktemp("vfi_test_schemas")
+    os.environ["VFI_SCHEMAS_DIR"] = str(temp_dir)
+    os.environ["VFI_MODEL_PATH"] = str(temp_dir / "model.pt")
+    yield
+    if previous_schemas is None:
+        os.environ.pop("VFI_SCHEMAS_DIR", None)
+    else:
+        os.environ["VFI_SCHEMAS_DIR"] = previous_schemas
+    if previous_model is None:
+        os.environ.pop("VFI_MODEL_PATH", None)
+    else:
+        os.environ["VFI_MODEL_PATH"] = previous_model
 
 
 def test_model_input_output_shapes():
@@ -32,7 +61,7 @@ def test_model_parameter_serialization_roundtrip():
     model1 = GraphAwareMLP(input_dim=32)
     params = model1.get_parameters()
     assert isinstance(params, list), "Parameters must be a list of numpy arrays"
-    assert len(params) == 18, f"Expected 18 state dict tensors, got {len(params)}"
+    assert len(params) == len(model1.state_dict()), "Every state dict tensor must be serialized"
 
     model2 = GraphAwareMLP(input_dim=32)
     # Mutate model2 weights
@@ -75,6 +104,25 @@ def test_dp_sgd_gradient_clipping_and_noise():
     assert delta == 1e-5, f"Delta should be 1e-5, got {delta}"
 
 
+def test_privacy_accountant_state_roundtrip(tmp_path):
+    from opacus.accountants import RDPAccountant
+    import json
+
+    original = RDPAccountant()
+    original.step(noise_multiplier=0.5, sample_rate=0.01)
+    state_path = tmp_path / "privacy_accountant.json"
+
+    _save_privacy_accountant_state(original, str(state_path))
+
+    with open(state_path, encoding="utf-8") as state_file:
+        serialized = json.load(state_file)
+    assert serialized["mechanism"] == "rdp"
+
+    restored = RDPAccountant()
+    _load_privacy_accountant_state(restored, str(state_path))
+    assert restored.history == original.history
+
+
 def test_exact_global_metric_calculation_not_averaged():
     """Verify that global metrics are computed from cumulative confusion matrices, not by averaging F1 scores."""
     # Simulate 2 clients with different sample distributions
@@ -100,7 +148,7 @@ def test_exact_global_metric_calculation_not_averaged():
     assert abs(true_f1 - naive_avg_f1) > 0.1, "True global F1 should differ significantly from naive averaged F1"
 
 
-def test_short_genuine_federated_round():
+def test_short_genuine_federated_round(causal_client_data):
     """Verify that a genuine short 4-client federated learning round executes and aggregates."""
     import flwr as fl
     from fl_implementation.server import EarlyStoppingFedAvg
@@ -141,7 +189,7 @@ def test_byzantine_malicious_update_rejection():
     from flwr.common import ndarrays_to_parameters, FitRes, Status, Code
     from unittest.mock import MagicMock
 
-    strategy = EarlyStoppingFedAvg()
+    strategy = EarlyStoppingFedAvg(target_rounds=1)
 
     # Honest client
     honest_model = GraphAwareMLP(input_dim=32)
@@ -149,6 +197,19 @@ def test_byzantine_malicious_update_rejection():
     honest_client = MagicMock()
     honest_client.cid = "bank_1_honest"
     honest_fit = FitRes(status=Status(code=Code.OK, message="Success"), parameters=honest_params, num_examples=1000, metrics={})
+
+    # Honest client after many batches: BatchNorm counters are large integers but
+    # model weights are unchanged.  These must NOT be treated as a huge L2 norm.
+    trained_weights = []
+    for arr in honest_model.get_parameters():
+        arr = arr.copy()
+        if np.issubdtype(arr.dtype, np.integer):
+            arr[...] = 1360
+        trained_weights.append(arr)
+    trained_params = ndarrays_to_parameters(trained_weights)
+    trained_client = MagicMock()
+    trained_client.cid = "bank_4_honest_trained"
+    trained_fit = FitRes(status=Status(code=Code.OK, message="Success"), parameters=trained_params, num_examples=1000, metrics={})
 
     # Malicious client 1: Extreme norm poisoning attack (e.g. 100,000 weight explosion)
     poisoned_weights = [arr * 10000.0 for arr in honest_model.get_parameters()]
@@ -167,6 +228,7 @@ def test_byzantine_malicious_update_rejection():
 
     results = [
         (honest_client, honest_fit),
+        (trained_client, trained_fit),
         (malicious_client_1, malicious_fit_1),
         (malicious_client_2, malicious_fit_2)
     ]
@@ -174,15 +236,18 @@ def test_byzantine_malicious_update_rejection():
     # Aggregate with EarlyStoppingFedAvg
     aggregated_params, _ = strategy.aggregate_fit(server_round=1, results=results, failures=[])
 
-    # Assert that aggregation succeeded and ONLY honest client was aggregated
+    # Assert that aggregation succeeded and BOTH honest clients were aggregated,
+    # even though one has realistic (large) BatchNorm batch counters.
     assert aggregated_params is not None, "Aggregation should succeed by filtering malicious clients"
-    assert strategy.last_client_count == 1, "Only the 1 honest client should have been aggregated"
+    assert strategy.last_client_count == 2, "Both honest clients should have been aggregated"
     
-    # Assert resulting weights have no NaNs and normal norm
+    # Assert resulting weights have no NaNs and normal norm (floating-point
+    # weights only; integer BatchNorm counters are not model weights).
     from flwr.common import parameters_to_ndarrays
     res_ndarrays = parameters_to_ndarrays(aggregated_params)
-    assert not any(np.isnan(arr).any() for arr in res_ndarrays), "Aggregated weights must not contain NaNs"
-    total_norm = np.sqrt(sum(np.sum(np.square(arr)) for arr in res_ndarrays))
+    assert not any(np.isnan(arr).any() for arr in res_ndarrays if np.issubdtype(arr.dtype, np.floating)), "Aggregated weights must not contain NaNs"
+    float_arrays = [arr for arr in res_ndarrays if np.issubdtype(arr.dtype, np.floating)]
+    total_norm = np.sqrt(sum(np.sum(np.square(arr)) for arr in float_arrays))
     assert total_norm < 150.0, "Aggregated norm must not be poisoned"
 
 
@@ -192,7 +257,7 @@ def test_shape_and_dimension_mismatch_rejection():
     from flwr.common import ndarrays_to_parameters, FitRes, Status, Code
     from unittest.mock import MagicMock
 
-    strategy = EarlyStoppingFedAvg()
+    strategy = EarlyStoppingFedAvg(target_rounds=1)
 
     # Honest client
     honest_model = GraphAwareMLP(input_dim=32)
@@ -248,4 +313,32 @@ def test_extreme_all_zero_class_imbalance_evaluation():
     assert 0.0 <= acc <= 1.0, "Accuracy must be valid percentage"
     assert 0.0 <= f1 <= 1.0, "F1 must be in [0, 1]"
 
+
+def test_holdout_evaluator_reports_confusion_matrix_and_counts():
+    """Centralized evaluation must report counts + confusion matrix on the untouched holdout."""
+    from fl_implementation.server import get_eval_fn
+
+    test_csv = os.path.join(PROJECT_ROOT, "fl_implementation", "data", "global_test.csv")
+    if not os.path.exists(test_csv):
+        pytest.skip("global_test.csv not available")
+
+    eval_fn = get_eval_fn(test_csv, split_name="final_test_once")
+    assert eval_fn is not None
+
+    model = GraphAwareMLP(input_dim=32)
+    loss, metrics = eval_fn(1, model.get_parameters(), {})
+
+    required = {
+        "accuracy", "precision", "recall", "f1", "auc",
+        "tp", "fp", "fn", "tn", "positives", "negatives",
+        "support", "prevalence", "confusion_matrix", "split",
+    }
+    assert required.issubset(metrics.keys()), f"Missing metrics: {required - set(metrics.keys())}"
+
+    tp, fp, fn, tn = metrics["tp"], metrics["fp"], metrics["fn"], metrics["tn"]
+    assert metrics["support"] == tp + fp + fn + tn
+    assert metrics["positives"] == tp + fn
+    assert metrics["negatives"] == fp + tn
+    assert metrics["confusion_matrix"] == [[tn, fp], [fn, tp]]
+    assert metrics["split"] == "final_test_once"
 

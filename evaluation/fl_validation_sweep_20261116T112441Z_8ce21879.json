@@ -1,0 +1,157 @@
+{
+  "sweep_id": "20261116T112441Z_8ce21879",
+  "run_id": "abc4b575614845cdb99a25f3f91aa979",
+  "selection": "best_validation_f1_in_prior_five_round_single_seed_screen; one-round run is a configuration recheck",
+  "screening_rounds": 1,
+  "final_rounds": 10,
+  "local_epochs": 1,
+  "candidates": [
+    {
+      "positive_loss_weight": 10.0,
+      "noise_multiplier": 0.25,
+      "dp_enabled": true,
+      "seed": 42,
+      "best_validation": {
+        "round": 1,
+        "f1": 0.15384615384615383,
+        "precision": 0.16666666666666666,
+        "recall": 0.14285714285714285,
+        "average_precision": 0.055095728187461585,
+        "decision_threshold": 8.697988232597709e-05,
+        "tp": 31,
+        "fp": 155,
+        "fn": 186,
+        "client_fit_summary": {
+          "dp_enabled_clients": 4,
+          "max_client_epsilon": 41.68717083168031,
+          "delta": 1e-05,
+          "dp_accountant": "rdp",
+          "dp_rng_mode": "standard_prng_demo_only"
+        }
+      },
+      "round_metrics": [
+        {
+          "round": 1,
+          "f1": 0.15384615384615383,
+          "precision": 0.16666666666666666,
+          "recall": 0.14285714285714285,
+          "average_precision": 0.055095728187461585,
+          "decision_threshold": 8.697988232597709e-05,
+          "tp": 31,
+          "fp": 155,
+          "fn": 186,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 41.68717083168031,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        }
+      ],
+      "artifact_dir": "C:\\Users\\keeru\\Capstone work\\project\\Verifiable-Federated-Intelligence\\Verifiable-Federated-Intelligence\\schemas\\validation_sweeps\\abc4b575614845cdb99a25f3f91aa979_20261116T112441Z_8ce21879\\sweep1_seed42"
+    }
+  ],
+  "selected_dp_configuration": {
+    "positive_loss_weight": 10.0,
+    "noise_multiplier": 0.25,
+    "dp_enabled": true,
+    "mean_best_validation_f1": 0.4631,
+    "seeds": [
+      42
+    ]
+  },
+  "no_dp_diagnostic": [],
+  "final_test_once": {
+    "run_id": "abc4b575614845cdb99a25f3f91aa979",
+    "selected_round": 10,
+    "selection_metric": "validation_f1",
+    "best_validation_f1": 0.5833333333333334,
+    "decision_threshold": 0.0007448174874298275,
+    "threshold_selection": "validation_max_f1",
+    "client_fit_summary": {
+      "dp_enabled_clients": 4,
+      "max_client_epsilon": 102.58567095795962,
+      "delta": 1e-05,
+      "dp_accountant": "rdp",
+      "dp_rng_mode": "standard_prng_demo_only"
+    },
+    "evaluation": "final_test_once",
+    "metrics": {
+      "accuracy": 0.9984360237394168,
+      "precision": 0.45496535796766746,
+      "recall": 0.652317880794702,
+      "f1": 0.5360544217687074,
+      "tp": 197,
+      "fp": 236,
+      "fn": 105,
+      "tn": 217496,
+      "positives": 302,
+      "negatives": 217732,
+      "support": 218034,
+      "prevalence": 0.0013851050753552199,
+      "confusion_matrix": [
+        [
+          217496,
+          236
+        ],
+        [
+          105,
+          197
+        ]
+      ],
+      "decision_threshold": 0.0007448174874298275,
+      "auc": 0.9922579194813042,
+      "average_precision": 0.5627497617062319,
+      "split": "final_test_once"
+    },
+    "timestamp": "2026-11-16T11:41:14.146933Z"
+  },
+  "note": "The DP-enabled setting was chosen from a four-candidate, five-round, single-seed validation pilot. A one-round recheck then preceded a ten-round selected run. Final-test metrics were measured after selection. The no-DP diagnostic failed due to Flower rejecting a None metric and was excluded. This is a pilot, not multi-seed evidence.",
+  "pilot_screening": {
+    "screening_rounds": 5,
+    "seeds": [
+      42
+    ],
+    "candidates": [
+      {
+        "positive_loss_weight": 10.0,
+        "noise_multiplier": 0.5,
+        "dp_enabled": true,
+        "best_validation_f1": 0.4525,
+        "precision": 0.5745,
+        "recall": 0.3733,
+        "average_precision": 0.406
+      },
+      {
+        "positive_loss_weight": 10.0,
+        "noise_multiplier": 0.25,
+        "dp_enabled": true,
+        "best_validation_f1": 0.4631,
+        "precision": 0.4974,
+        "recall": 0.4332,
+        "average_precision": 0.4147
+      },
+      {
+        "positive_loss_weight": 25.0,
+        "noise_multiplier": 0.5,
+        "dp_enabled": true,
+        "best_validation_f1": 0.4525,
+        "precision": 0.5745,
+        "recall": 0.3733,
+        "average_precision": 0.406
+      },
+      {
+        "positive_loss_weight": 25.0,
+        "noise_multiplier": 0.25,
+        "dp_enabled": true,
+        "best_validation_f1": 0.4631,
+        "precision": 0.4974,
+        "recall": 0.4332,
+        "average_precision": 0.4147
+      }
+    ],
+    "no_dp_diagnostic": "Failed before training: Flower rejects None in client metric records when DP is disabled; excluded from selection. Client metric emission was corrected after this run.",
+    "source_logs": "schemas/validation_sweeps/abc4b575614845cdb99a25f3f91aa979_20261116T104405Z_d346e55d/"
+  }
+}

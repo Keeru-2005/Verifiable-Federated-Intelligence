@@ -39,6 +39,14 @@ app.post("/api/run", (req, res) => {
   pipelineStatus.status = "running";
   pipelineStatus.step = "Starting pipeline coordination...";
   pipelineStatus.logs = ["[START] Pipeline launch initiated."];
+
+  // Test/CI guard: still exercise the concurrency lock, but never spawn the
+  // real baseline + proof pipeline (which would overwrite canonical artifacts).
+  if (process.env.VFI_PIPELINE_DRY_RUN === "1") {
+    pipelineStatus.step = "Dry run (VFI_PIPELINE_DRY_RUN=1)";
+    pipelineStatus.logs.push("[DRY RUN] Pipeline launch simulated; no child processes started.");
+    return res.json({ message: "Pipeline started (dry run)." });
+  }
   
   // First run the baseline comparison training to make sure we have comparison data and checkpoints
   pipelineStatus.step = "Running centralized baseline comparison training...";
@@ -115,12 +123,17 @@ app.post("/api/run", (req, res) => {
 // Endpoint to get all round details from schema folder
 app.get("/api/rounds", (req, res) => {
   try {
+    const manifestPath = path.join(projectRoot, "data", "preprocess_manifest.json");
+    if (!fs.existsSync(manifestPath)) return res.json([]);
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    if (manifest.status !== "complete" || !manifest.run_id) return res.json([]);
     const files = fs.readdirSync(schemasDir);
     const roundFiles = files.filter(f => f.startsWith("global_model_round_") && f.endsWith(".json") && !f.includes("_N.json"));
     
     const rounds = roundFiles.map(f => {
       const filePath = path.join(schemasDir, f);
       const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      if (data.run_id !== manifest.run_id) return null;
       return {
         round: data.round,
         metrics: data.metrics,
@@ -129,10 +142,30 @@ app.get("/api/rounds", (req, res) => {
       };
     });
     
-    rounds.sort((a, b) => a.round - b.round);
-    res.json(rounds);
+    const currentRunRounds = rounds.filter(Boolean);
+    currentRunRounds.sort((a, b) => a.round - b.round);
+    res.json(currentRunRounds);
   } catch (err) {
     res.status(500).json({ error: "Failed to read rounds: " + err.message });
+  }
+});
+
+// Final metrics are distinct from the per-round validation metrics.
+app.get("/api/final-evaluation", (req, res) => {
+  const finalEvaluationPath = path.join(schemasDir, "final_evaluation.json");
+  const manifestPath = path.join(projectRoot, "data", "preprocess_manifest.json");
+  if (!fs.existsSync(finalEvaluationPath)) {
+    return res.status(404).json({ error: "No final evaluation is available for the current run." });
+  }
+  try {
+    const finalEvaluation = JSON.parse(fs.readFileSync(finalEvaluationPath, "utf8"));
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    if (manifest.status !== "complete" || finalEvaluation.run_id !== manifest.run_id) {
+      return res.status(404).json({ error: "Final evaluation is stale for the current preprocessing run." });
+    }
+    res.json(finalEvaluation);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to read final evaluation: " + err.message });
   }
 });
 
@@ -150,6 +183,13 @@ app.get("/api/rounds/:id", (req, res) => {
 
   try {
     const data = JSON.parse(fs.readFileSync(roundFilePath, "utf8"));
+    const manifestPath = path.join(projectRoot, "data", "preprocess_manifest.json");
+    const manifest = fs.existsSync(manifestPath)
+      ? JSON.parse(fs.readFileSync(manifestPath, "utf8"))
+      : {};
+    if (manifest.status !== "complete" || data.run_id !== manifest.run_id) {
+      return res.status(404).json({ error: `Round ${roundId} is stale for the current run.` });
+    }
     res.json({
       round: data.round,
       metrics: data.metrics,
@@ -350,7 +390,7 @@ app.get("/api/proof/latest", (req, res) => {
       publicSignals: proofData.publicSignals,
       roundReference: proofData.round_reference,
       circuitHash: proofData.circuit_hash,
-      provingTimeSec: proofData.proving_time_sec || 0.72,
+      provingTimeSec: proofData.proving_time_sec ?? null,
       verificationKeyConfigured: fs.existsSync(vKeyPath),
       verificationProtocol: "Groth16 (alt_bn128/BN254 Pairing Check)",
       curve: "alt_bn128",

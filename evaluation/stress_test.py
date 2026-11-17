@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+import shutil
+import tempfile
 import subprocess
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -9,13 +11,17 @@ def run_stress_test():
     print("=================================================");
     print("[STEP] STRESS TEST: Simulating Node Failure Mid-Round");
     print("=================================================");
-    
+
+    # Keep test round exports out of the canonical schemas/ directory.
+    temp_schemas = tempfile.mkdtemp(prefix="vfi_stress_schemas_")
+
     # 1. Start Server
     server_env = os.environ.copy()
     server_env["PYTHONIOENCODING"] = "utf-8"
+    server_env["VFI_SCHEMAS_DIR"] = temp_schemas
     print("\n[1/4] Launching FL Server...")
     server_proc = subprocess.Popen(
-        [sys.executable, "fl_implementation/server.py"],
+        [sys.executable, "fl_implementation/server.py", "--rounds", "1", "--min-clients", "4"],
         cwd=PROJECT_ROOT,
         env=server_env,
         stdout=subprocess.PIPE,
@@ -64,10 +70,13 @@ def run_stress_test():
         print("   When Node 4 was killed, only 3 nodes remained. The server correctly refused")
         print("   to aggregate partial/corrupted client weights, blocking until timeout.")
 
-    # Cleanup remaining processes
+    # Cleanup remaining processes and the temporary schemas directory
     for p in client_procs:
         if p.poll() is None:
             p.kill()
+    if server_proc.poll() is None:
+        server_proc.kill()
+    shutil.rmtree(temp_schemas, ignore_errors=True)
 
 if __name__ == "__main__":
     run_stress_test()

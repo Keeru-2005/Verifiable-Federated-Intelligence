@@ -1,7 +1,7 @@
 {
   "network": "localhost",
-  "Groth16Verifier": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-  "AMLVerifier": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+  "Groth16Verifier": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+  "AMLVerifier": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "timestamp": "2026-11-04T08:32:42.959Z"
+  "timestamp": "2026-11-16T08:45:41.554Z"
 }

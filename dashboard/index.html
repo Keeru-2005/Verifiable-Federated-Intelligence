@@ -145,10 +145,10 @@
                 <span class="metric-label">Global F1 Score</span>
                 <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               </div>
-              <div class="metric-value" id="kpi-f1">99.67%</div>
+              <div class="metric-value" id="kpi-f1">—</div>
               <div class="metric-footer">
-                <span class="metric-tag positive" id="kpi-recall">99.86% Recall</span>
-                <span>True Positive Catch</span>
+                <span class="metric-tag positive" id="kpi-recall">— Recall</span>
+                <span>From live holdout</span>
               </div>
             </div>
 
@@ -203,7 +203,7 @@
                 <div>
                   <label class="metric-label" style="display: block; margin-bottom: 6px;">Consortium Execution Telemetry</label>
                   <div id="console-logs" class="terminal-window">
-                    <div class="terminal-line info">[SYSTEM] Engine standing by. Model converged at 99.67% F1.</div>
+                    <div class="terminal-line info">[SYSTEM] Engine standing by. Metrics load from the latest leak-free holdout evaluation.</div>
                   </div>
                 </div>
               </div>
@@ -373,7 +373,7 @@
               <div class="card-body">
                 <img src="/visualizations/baseline_vs_federated.png" style="width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--color-border);" alt="Benchmark Convergence Chart">
                 <div style="margin-top: 14px; font-size: 12px; color: var(--color-charcoal-subtle);">
-                  • <strong>Finding:</strong> Federated <code>GraphAwareMLP</code> converges to <strong>99.67% F1</strong>, matching centralized performance without aggregating customer financial transaction records.
+                  • <strong>Finding:</strong> the old <strong>99.67% F1</strong> claim was invalidated by target leakage. Live values now come from the untouched holdout; the completed full-corpus rerun reached <strong>F1 0.6169</strong> (see <code>docs/RERUN_RESULTS.md</code>).
                 </div>
               </div>
             </div>
@@ -383,49 +383,51 @@
               <div class="card-header">
                 <div>
                   <h3 class="card-title">Holdout Test Set Classification Metrics</h3>
-                  <p class="card-subtitle">Evaluated on 180,272 unaugmented transactions (clean class distribution)</p>
+                  <p class="card-subtitle">Metrics come from the selected model's one-time final test evaluation. Its decision threshold was selected on validation data.</p>
                 </div>
-                <span class="badge badge-success">Evaluated Round 10</span>
+                <span class="badge badge-success">Leak-free holdout</span>
               </div>
               <div class="card-body" style="display: flex; flex-direction: column; gap: 16px;">
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                   <div style="background: var(--color-ivory-warm); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
                     <div class="metric-label">True Positive Rate (Recall)</div>
-                    <div style="font-size: 22px; font-weight: 700; color: var(--status-success); margin: 4px 0;">99.86%</div>
-                    <div style="font-size: 11px; color: var(--color-charcoal-subtle);">Disguised illicit mule loops detected</div>
+                    <div id="holdout-recall" style="font-size: 22px; font-weight: 700; color: var(--status-success); margin: 4px 0;">—</div>
+                    <div style="font-size: 11px; color: var(--color-charcoal-subtle);">Loaded from holdout JSON</div>
                   </div>
 
                   <div style="background: var(--color-ivory-warm); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
                     <div class="metric-label">Precision Rate</div>
-                    <div style="font-size: 22px; font-weight: 700; color: var(--color-forest); margin: 4px 0;">99.48%</div>
-                    <div style="font-size: 11px; color: var(--color-charcoal-subtle);">False positive alert containment</div>
+                    <div id="holdout-precision" style="font-size: 22px; font-weight: 700; color: var(--color-forest); margin: 4px 0;">—</div>
+                    <div style="font-size: 11px; color: var(--color-charcoal-subtle);">Loaded from holdout JSON</div>
                   </div>
                 </div>
 
+                <div class="metric-label">Validation-selected decision threshold: <strong id="holdout-threshold">—</strong></div>
+
                 <!-- 2x2 Confusion Matrix Visual Breakdown -->
                 <div>
-                  <div class="metric-label" style="margin-bottom: 6px;">Cumulative Confusion Matrix (Holdout Set)</div>
+                  <div class="metric-label" style="margin-bottom: 6px;">Final test confusion matrix (selected round)</div>
                   <div class="matrix-container">
                     <div class="matrix-cell tp">
                       <span class="matrix-label">True Positives (TP)</span>
-                      <span class="matrix-num">1,529</span>
-                      <span class="matrix-sub">Illicit caught (99.86%)</span>
+                      <span class="matrix-num" id="holdout-tp">—</span>
+                      <span class="matrix-sub">Illicit caught</span>
                     </div>
                     <div class="matrix-cell fp">
                       <span class="matrix-label">False Positives (FP)</span>
-                      <span class="matrix-num">8</span>
-                      <span class="matrix-sub">Legitimate flagged (0.004%)</span>
+                      <span class="matrix-num" id="holdout-fp">—</span>
+                      <span class="matrix-sub">Legitimate flagged</span>
                     </div>
                     <div class="matrix-cell fn">
                       <span class="matrix-label">False Negatives (FN)</span>
-                      <span class="matrix-num">2</span>
-                      <span class="matrix-sub">Missed illicit (0.13%)</span>
+                      <span class="matrix-num" id="holdout-fn">—</span>
+                      <span class="matrix-sub">Missed illicit</span>
                     </div>
                     <div class="matrix-cell tn">
                       <span class="matrix-label">True Negatives (TN)</span>
-                      <span class="matrix-num">178,733</span>
-                      <span class="matrix-sub">Legitimate cleared (99.99%)</span>
+                      <span class="matrix-num" id="holdout-tn">—</span>
+                      <span class="matrix-sub">Legitimate cleared</span>
                     </div>
                   </div>
                 </div>
@@ -443,15 +445,15 @@
                     <tbody>
                       <tr>
                         <td><strong>Accuracy</strong></td>
-                        <td>99.67%</td>
-                        <td>99.68%</td>
-                        <td style="color: var(--status-success); font-weight: 600;">-0.01% (Parity)</td>
+                        <td id="baseline-acc-fed">—</td>
+                        <td id="baseline-acc-central">—</td>
+                        <td id="baseline-acc-var">—</td>
                       </tr>
                       <tr>
                         <td><strong>F1 Score</strong></td>
-                        <td>0.9967</td>
-                        <td>0.9968</td>
-                        <td style="color: var(--status-success); font-weight: 600;">-0.0001 (Parity)</td>
+                        <td id="baseline-f1-fed">—</td>
+                        <td id="baseline-f1-central">—</td>
+                        <td id="baseline-f1-var">—</td>
                       </tr>
                       <tr>
                         <td><strong>Features</strong></td>
@@ -677,7 +679,7 @@
                     <span class="config-title">ECDSA Signing Address</span>
                     <span class="config-desc">Submits proof commitments to AMLVerifier.sol</span>
                   </div>
-                  <span class="config-value">0xa4cd...4D72</span>
+                  <span class="config-value">0xf39F...2266</span>
                 </div>
                 <div class="config-item">
                   <div class="config-label-group">

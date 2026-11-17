@@ -20,14 +20,42 @@ async function main() {
   }
   const proofData = JSON.parse(fs.readFileSync(proofPath));
   const roundNumber = proofData.round_reference;
+  if (!Number.isInteger(Number(roundNumber)) || proofData.publicSignals?.length !== 3) {
+    throw new Error("Proof metadata is missing a valid round or the expected three public signals.");
+  }
+  if (String(proofData.publicSignals[1]) !== String(roundNumber)) {
+    throw new Error("Proof public round number does not match round_reference.");
+  }
+  if (String(proofData.publicSignals[2]) !== String(proofData.total_samples)) {
+    throw new Error("Proof public sample count does not match proof metadata.");
+  }
   console.log(`Proof loaded. Target Round Reference: ${roundNumber}`);
 
-  // 3. Read corresponding global_model_round_N.json metrics
-  const modelPath = path.join(__dirname, `../../schemas/global_model_round_${roundNumber}.json`);
+  // 3. Read corresponding global_model_round_N.json metrics.
+  //    MODEL_ROUND_PATH lets tests submit a fixture without overwriting the
+  //    canonical leak-free round exports in schemas/.
+  const modelPath = process.env.MODEL_ROUND_PATH
+    ? path.resolve(process.env.MODEL_ROUND_PATH)
+    : path.join(__dirname, `../../schemas/global_model_round_${roundNumber}.json`);
   if (!fs.existsSync(modelPath)) {
     throw new Error(`global_model_round_${roundNumber}.json not found in schemas/ folder!`);
   }
   const modelData = JSON.parse(fs.readFileSync(modelPath));
+  if (Number(modelData.round) !== Number(roundNumber)) {
+    throw new Error("Proof round does not match the selected global model artifact.");
+  }
+  const finalEvaluationPath = path.join(__dirname, "../../schemas/final_evaluation.json");
+  if (!fs.existsSync(finalEvaluationPath)) {
+    throw new Error("final_evaluation.json is required before recording test metrics on-chain.");
+  }
+  const finalEvaluation = JSON.parse(fs.readFileSync(finalEvaluationPath));
+  if (Number(finalEvaluation.selected_round) !== Number(roundNumber) ||
+      finalEvaluation.evaluation !== "final_test_once" ||
+      finalEvaluation.run_id !== proofData.run_id ||
+      modelData.run_id !== proofData.run_id) {
+    throw new Error("Proof round does not match the single final-test evaluation record.");
+  }
+  const finalMetrics = finalEvaluation.metrics;
   console.log(`Model metadata loaded for round ${roundNumber}.`);
 
   // 4. Connect to the AMLVerifier contract (auto-deploying if current network has no bytecode)
@@ -63,6 +91,8 @@ async function main() {
   ];
   const c = proofData.proof.pi_c.slice(0, 2);
   const input = proofData.publicSignals;
+  console.log(`Proved output-layer commitment: ${input[0]}`);
+  console.log(`Proved Flower aggregation sample count: ${input[2]}`);
 
   // Compute a simple hash for model weights to represent on-chain
   const modelWeightsStr = JSON.stringify(modelData.weights);
@@ -71,10 +101,10 @@ async function main() {
 
   // Scale metrics (e.g. 0.9542 -> 9542)
   const scale = 10000;
-  const accuracy = Math.round(modelData.metrics.accuracy * scale);
-  const precision = Math.round(modelData.metrics.precision * scale);
-  const recall = Math.round(modelData.metrics.recall * scale);
-  const f1 = Math.round(modelData.metrics.f1 * scale);
+  const accuracy = Math.round(finalMetrics.accuracy * scale);
+  const precision = Math.round(finalMetrics.precision * scale);
+  const recall = Math.round(finalMetrics.recall * scale);
+  const f1 = Math.round(finalMetrics.f1 * scale);
   const clientCount = modelData.client_count;
   const circuitHash = proofData.circuit_hash;
 
@@ -106,6 +136,7 @@ async function main() {
   console.log(`Transaction sent! Hash: ${tx.hash}`);
   const receipt = await tx.wait();
   console.log(`Transaction confirmed in block: ${receipt.blockNumber}`);
+  console.log(`Gas used for on-chain proof verification + round recording: ${receipt.gasUsed.toString()}`);
 
   // Retrieve verification result from contract
   const roundDetails = await amlVerifier.rounds(roundNumber);

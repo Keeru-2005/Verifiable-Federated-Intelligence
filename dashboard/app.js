@@ -106,6 +106,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
+      const finalEvaluation = await fetchJson("/api/final-evaluation");
+      if (finalEvaluation && finalEvaluation.evaluation === "final_test_once") {
+        renderHoldoutMetrics(finalEvaluation);
+      }
+    } catch (e) {
+      console.error("Error in syncInstitutionView final evaluation:", e);
+    }
+
+    try {
       // 2. Fetch Blockchain Status
       const bcStatus = await fetchJson("/api/blockchain/status");
       if (bcStatus) {
@@ -168,6 +177,14 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error in syncInstitutionView ledger:", e);
     }
 
+    try {
+      // 6. Fetch centralized-vs-federated benchmark results
+      const baseline = await fetchJson("/api/baseline");
+      renderBaselineComparison(baseline);
+    } catch (e) {
+      console.error("Error in syncInstitutionView baseline:", e);
+    }
+
     const lastSync = document.getElementById("last-sync-time");
     if (lastSync) lastSync.innerText = `Synced at ${new Date().toLocaleTimeString()}`;
   }
@@ -182,13 +199,66 @@ document.addEventListener("DOMContentLoaded", () => {
     const kpiRecall = document.getElementById("kpi-recall");
     const sidebarBadge = document.getElementById("sidebar-rounds-badge");
 
-    const f1Value = typeof m.f1 === "number" ? m.f1 : 0.9967;
-    const recallValue = typeof m.recall === "number" ? m.recall : 0.9986;
+    const f1Value = typeof m.f1 === "number" ? (m.f1 * 100).toFixed(2) + "%" : "—";
+    const recallValue = typeof m.recall === "number" ? (m.recall * 100).toFixed(2) + "%" : "—";
 
     if (kpiRound) kpiRound.innerText = `Round ${latest.round || rounds.length}`;
-    if (kpiF1) kpiF1.innerText = `${(f1Value * 100).toFixed(2)}%`;
-    if (kpiRecall) kpiRecall.innerText = `${(recallValue * 100).toFixed(2)}% Recall`;
+    if (kpiF1) kpiF1.innerText = f1Value;
+    if (kpiRecall) kpiRecall.innerText = `${recallValue} Recall`;
     if (sidebarBadge) sidebarBadge.innerText = `${rounds.length} Rounds`;
+  }
+
+  function renderHoldoutMetrics(finalEvaluation) {
+    const m = (finalEvaluation || {}).metrics || {};
+
+    const recallEl = document.getElementById("holdout-recall");
+    const precisionEl = document.getElementById("holdout-precision");
+    if (recallEl && typeof m.recall === "number") recallEl.innerText = `${(m.recall * 100).toFixed(2)}%`;
+    if (precisionEl && typeof m.precision === "number") precisionEl.innerText = `${(m.precision * 100).toFixed(2)}%`;
+    const thresholdEl = document.getElementById("holdout-threshold");
+    if (thresholdEl && typeof finalEvaluation.decision_threshold === "number") {
+      thresholdEl.innerText = finalEvaluation.decision_threshold.toPrecision(5);
+    }
+
+    let tn, fp, fn, tp;
+    if (Array.isArray(m.confusion_matrix) && m.confusion_matrix.length === 2) {
+      tn = m.confusion_matrix[0][0];
+      fp = m.confusion_matrix[0][1];
+      fn = m.confusion_matrix[1][0];
+      tp = m.confusion_matrix[1][1];
+    } else {
+      ({ tn, fp, fn, tp } = m);
+    }
+
+    const cells = { "holdout-tp": tp, "holdout-fp": fp, "holdout-fn": fn, "holdout-tn": tn };
+    Object.entries(cells).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el && typeof value === "number") el.innerText = value.toLocaleString();
+    });
+  }
+
+  function renderBaselineComparison(baseline) {
+    if (!baseline) return;
+    const centralized = Array.isArray(baseline.centralized) ? baseline.centralized : [];
+    const federated = Array.isArray(baseline.federated) ? baseline.federated : [];
+    if (!centralized.length || !federated.length) return;
+
+    const best = (rows) => rows.reduce((a, b) => ((b.f1 || 0) > (a.f1 || 0) ? b : a));
+    const c = best(centralized);
+    const f = best(federated);
+
+    const pct = (v) => `${((v || 0) * 100).toFixed(2)}%`;
+    const setText = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.innerText = text;
+    };
+
+    setText("baseline-acc-fed", pct(f.accuracy));
+    setText("baseline-acc-central", pct(c.accuracy));
+    setText("baseline-acc-var", `${((f.accuracy - c.accuracy) * 100).toFixed(2)} pp`);
+    setText("baseline-f1-fed", (f.f1 || 0).toFixed(4));
+    setText("baseline-f1-central", (c.f1 || 0).toFixed(4));
+    setText("baseline-f1-var", `${((f.f1 - c.f1) * 100).toFixed(2)} pp`);
   }
 
   function renderOverviewRounds(rounds) {
@@ -336,15 +406,15 @@ document.addEventListener("DOMContentLoaded", () => {
       rounds.forEach(r => {
         const roundNum = r.roundNumber || r.round;
         const hash = r.modelWeightsHash || (r.metrics ? "0x0d693f...cf30ee14" : "0x...");
-        const acc = r.accuracy || (r.metrics ? (r.metrics.accuracy * 100).toFixed(2) : "99.67");
-        const f1 = r.f1 || (r.metrics ? (r.metrics.f1 * 100).toFixed(2) : "99.67");
+        const acc = r.accuracy != null ? r.accuracy : (r.metrics && r.metrics.accuracy != null ? (r.metrics.accuracy * 100).toFixed(2) : "—");
+        const f1 = r.f1 != null ? r.f1 : (r.metrics && r.metrics.f1 != null ? (r.metrics.f1 * 100).toFixed(2) : "—");
         const clients = r.clientCount || r.client_count || 4;
         const ts = r.timestamp || new Date().toISOString();
         const zk = r.zkVerified !== undefined ? r.zkVerified : true;
         csv += `${roundNum},"${hash}",${acc},${f1},${clients},"${ts}",${zk},Groth16/BN254\n`;
       });
     } else {
-      csv += "10,\"0x0d693f6d0a1ed07376c4ba9213e851288115a05ee5c11344dfe38481cf30ee14\",99.67,99.67,4,\"2026-10-30T14:58:15Z\",true,Groth16/BN254\n";
+      csv += "N/A,\"N/A\",—,—,0,\"N/A\",false,N/A\n";
     }
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -378,7 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <td>${verifiedAcc}%</td>
           <td>${r.clientCount} Banks</td>
           <td style="color: var(--color-charcoal-subtle);">${timestamp}</td>
-          <td class="mono" style="font-size: 11px;">${r.circuitHash ? r.circuitHash.substring(0, 12) + "..." : "0x19f12a..."}</td>
+          <td class="mono" style="font-size: 11px;">${r.circuitHash ? r.circuitHash.substring(0, 12) + "..." : "0xb0a8f92c..."}</td>
           <td><span class="badge badge-success">Groth16 Verified</span></td>
         </tr>
       `;

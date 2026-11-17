@@ -6,15 +6,18 @@ import "./Groth16Verifier.sol";
 contract AMLVerifier {
     struct AMLRound {
         uint256 roundNumber;
-        string modelWeightsHash;
-        uint256 accuracy;      // Scaled by 10000 (e.g., 9542 = 95.42%)
+        string modelWeightsHash; // Audit metadata; not constrained by the ZK circuit.
+        uint256 accuracy;      // Final-test metadata, scaled by 10000; not ZK-proven.
         uint256 precision;     // Scaled by 10000
         uint256 recall;        // Scaled by 10000
         uint256 f1;            // Scaled by 10000
         uint256 clientCount;
         uint256 timestamp;
         string circuitHash;
+        string metricsSplit;   // Identifies the evaluation record; metrics are not circuit inputs.
         address submitter;
+        uint256 outputLayerCommitment; // Public output of the aggregation proof.
+        uint256 aggregationSampleCount;
     }
 
     Groth16Verifier public immutable verifierContract;
@@ -35,7 +38,10 @@ contract AMLVerifier {
         uint256 clientCount,
         uint256 timestamp,
         string circuitHash,
-        address indexed submitter
+        address indexed submitter,
+        uint256 outputLayerCommitment,
+        uint256 aggregationSampleCount,
+        string metricsSplit
     );
 
     event InvalidProof(
@@ -83,6 +89,9 @@ contract AMLVerifier {
         uint256 clientCount,
         string calldata circuitHash
     ) external returns (bool) {
+        require(input[1] == roundNumber, "Proof round does not match ledger round");
+        require(input[2] > 0, "Proof aggregation sample count must be positive");
+
         // 1. Verify the cryptographic proof using the imported Groth16 contract
         bool isProofValid = verifierContract.verifyProof(a, b, c, input);
         require(isProofValid, "Cryptographic zk-SNARK verification failed");
@@ -99,7 +108,10 @@ contract AMLVerifier {
             clientCount: clientCount,
             timestamp: block.timestamp,
             circuitHash: circuitHash,
-            submitter: msg.sender
+            metricsSplit: "final_test_once",
+            submitter: msg.sender,
+            outputLayerCommitment: input[0],
+            aggregationSampleCount: input[2]
         });
 
         isRoundVerified[roundNumber] = true;
@@ -115,7 +127,10 @@ contract AMLVerifier {
             clientCount,
             block.timestamp,
             circuitHash,
-            msg.sender
+            msg.sender,
+            input[0],
+            input[2],
+            "final_test_once"
         );
 
         return true;

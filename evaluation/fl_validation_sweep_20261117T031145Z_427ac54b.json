@@ -1,0 +1,271 @@
+{
+  "sweep_id": "20261117T031145Z_427ac54b",
+  "run_id": "abc4b575614845cdb99a25f3f91aa979",
+  "selection": "mean_best_validation_f1_across_seeds",
+  "screening_rounds": 3,
+  "final_rounds": 10,
+  "local_epochs": 1,
+  "candidates": [
+    {
+      "positive_loss_weight": 25.0,
+      "noise_multiplier": 0.25,
+      "fedprox_mu": 0.0,
+      "dp_enabled": true,
+      "seed": 42,
+      "best_validation": {
+        "round": 3,
+        "f1": 0.6451612903225806,
+        "precision": 0.7741935483870968,
+        "recall": 0.5529953917050692,
+        "average_precision": 0.5993504823823051,
+        "decision_threshold": 0.0022904605139046907,
+        "tp": 120,
+        "fp": 35,
+        "fn": 97,
+        "client_fit_summary": {
+          "dp_enabled_clients": 4,
+          "max_client_epsilon": 59.955004761346224,
+          "delta": 1e-05,
+          "dp_accountant": "rdp",
+          "dp_rng_mode": "standard_prng_demo_only"
+        }
+      },
+      "round_metrics": [
+        {
+          "round": 1,
+          "f1": 0.2996941896024465,
+          "precision": 0.44545454545454544,
+          "recall": 0.22580645161290322,
+          "average_precision": 0.2250570562735084,
+          "decision_threshold": 0.0014502571430057287,
+          "tp": 49,
+          "fp": 61,
+          "fn": 168,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 41.43154985073997,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 2,
+          "f1": 0.48450704225352115,
+          "precision": 0.6231884057971014,
+          "recall": 0.39631336405529954,
+          "average_precision": 0.4183541210866954,
+          "decision_threshold": 0.0016370299272239208,
+          "tp": 86,
+          "fp": 52,
+          "fn": 131,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 51.98184770741383,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 3,
+          "f1": 0.6451612903225806,
+          "precision": 0.7741935483870968,
+          "recall": 0.5529953917050692,
+          "average_precision": 0.5993504823823051,
+          "decision_threshold": 0.0022904605139046907,
+          "tp": 120,
+          "fp": 35,
+          "fn": 97,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 59.955004761346224,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        }
+      ],
+      "artifact_dir": "C:\\Users\\keeru\\Capstone work\\project\\Verifiable-Federated-Intelligence\\Verifiable-Federated-Intelligence\\schemas\\validation_sweeps\\abc4b575614845cdb99a25f3f91aa979_20261117T031145Z_427ac54b\\sweep1_seed42"
+    },
+    {
+      "positive_loss_weight": 25.0,
+      "noise_multiplier": 0.25,
+      "fedprox_mu": 0.0,
+      "dp_enabled": true,
+      "seed": 43,
+      "best_validation": {
+        "round": 3,
+        "f1": 0.5386819484240689,
+        "precision": 0.7121212121212122,
+        "recall": 0.43317972350230416,
+        "average_precision": 0.46899059784258057,
+        "decision_threshold": 0.017068741843104362,
+        "tp": 94,
+        "fp": 38,
+        "fn": 123,
+        "client_fit_summary": {
+          "dp_enabled_clients": 4,
+          "max_client_epsilon": 59.955004761346224,
+          "delta": 1e-05,
+          "dp_accountant": "rdp",
+          "dp_rng_mode": "standard_prng_demo_only"
+        }
+      },
+      "round_metrics": [
+        {
+          "round": 1,
+          "f1": 0.3067484662576687,
+          "precision": 0.45871559633027525,
+          "recall": 0.2304147465437788,
+          "average_precision": 0.22518958419366236,
+          "decision_threshold": 0.0031119701452553272,
+          "tp": 50,
+          "fp": 59,
+          "fn": 167,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 41.43154985073997,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 2,
+          "f1": 0.49456521739130427,
+          "precision": 0.6026490066225165,
+          "recall": 0.41935483870967744,
+          "average_precision": 0.40815228817126287,
+          "decision_threshold": 0.004729313775897026,
+          "tp": 91,
+          "fp": 60,
+          "fn": 126,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 51.98184770741383,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 3,
+          "f1": 0.5386819484240689,
+          "precision": 0.7121212121212122,
+          "recall": 0.43317972350230416,
+          "average_precision": 0.46899059784258057,
+          "decision_threshold": 0.017068741843104362,
+          "tp": 94,
+          "fp": 38,
+          "fn": 123,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 59.955004761346224,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        }
+      ],
+      "artifact_dir": "C:\\Users\\keeru\\Capstone work\\project\\Verifiable-Federated-Intelligence\\Verifiable-Federated-Intelligence\\schemas\\validation_sweeps\\abc4b575614845cdb99a25f3f91aa979_20261117T031145Z_427ac54b\\sweep1_seed43"
+    },
+    {
+      "positive_loss_weight": 25.0,
+      "noise_multiplier": 0.25,
+      "fedprox_mu": 0.0,
+      "dp_enabled": true,
+      "seed": 44,
+      "best_validation": {
+        "round": 3,
+        "f1": 0.6049046321525886,
+        "precision": 0.74,
+        "recall": 0.511520737327189,
+        "average_precision": 0.5548652140497337,
+        "decision_threshold": 0.01324368640780449,
+        "tp": 111,
+        "fp": 39,
+        "fn": 106,
+        "client_fit_summary": {
+          "dp_enabled_clients": 4,
+          "max_client_epsilon": 59.955004761346224,
+          "delta": 1e-05,
+          "dp_accountant": "rdp",
+          "dp_rng_mode": "standard_prng_demo_only"
+        }
+      },
+      "round_metrics": [
+        {
+          "round": 1,
+          "f1": 0.2229965156794425,
+          "precision": 0.45714285714285713,
+          "recall": 0.14746543778801843,
+          "average_precision": 0.1323132423526054,
+          "decision_threshold": 0.0005469530005939305,
+          "tp": 32,
+          "fp": 38,
+          "fn": 185,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 41.43154985073997,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 2,
+          "f1": 0.516795865633075,
+          "precision": 0.5882352941176471,
+          "recall": 0.4608294930875576,
+          "average_precision": 0.4593165496806426,
+          "decision_threshold": 0.0012913093669340014,
+          "tp": 100,
+          "fp": 70,
+          "fn": 117,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 51.98184770741383,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        },
+        {
+          "round": 3,
+          "f1": 0.6049046321525886,
+          "precision": 0.74,
+          "recall": 0.511520737327189,
+          "average_precision": 0.5548652140497337,
+          "decision_threshold": 0.01324368640780449,
+          "tp": 111,
+          "fp": 39,
+          "fn": 106,
+          "client_fit_summary": {
+            "dp_enabled_clients": 4,
+            "max_client_epsilon": 59.955004761346224,
+            "delta": 1e-05,
+            "dp_accountant": "rdp",
+            "dp_rng_mode": "standard_prng_demo_only"
+          }
+        }
+      ],
+      "artifact_dir": "C:\\Users\\keeru\\Capstone work\\project\\Verifiable-Federated-Intelligence\\Verifiable-Federated-Intelligence\\schemas\\validation_sweeps\\abc4b575614845cdb99a25f3f91aa979_20261117T031145Z_427ac54b\\sweep1_seed44"
+    }
+  ],
+  "selected_dp_configuration": {
+    "positive_loss_weight": 25.0,
+    "noise_multiplier": 0.25,
+    "fedprox_mu": 0.0,
+    "dp_enabled": true,
+    "mean_best_validation_f1": 0.596249290299746,
+    "seeds": [
+      42,
+      43,
+      44
+    ]
+  },
+  "no_dp_diagnostic": [],
+  "final_test_once": null,
+  "note": "The no-DP condition is a diagnostic only. All candidate selection used validation data; final test metrics were read only after choosing the DP configuration."
+}

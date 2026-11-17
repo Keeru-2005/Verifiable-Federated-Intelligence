@@ -1,6 +1,15 @@
 # Sprint 1 Executive Summary: 10% Milestone Completion
 
-This document summarizes the engineering architecture and codebase modifications successfully developed, tested, and deployed to version control (`preprocess` branch) during Sprint 1.
+> **Historical note (November 2026):** this sprint summary describes the original
+> preprocessing design, in which SMOTE and scaler/PCA fitting happened before the
+> train/test split and before bank sharding. That design leaked holdout information and
+> has been replaced. See [`DATA_INTEGRITY.md`](DATA_INTEGRITY.md). The text below is kept
+> as a record of the sprint, not as a description of the current pipeline. The bullets
+> below are contemporaneous sprint notes, not independently verified measurements or a
+> specification of the present implementation. In particular, historical SMOTE, GAT,
+> bank-locality, test, and dataset-download statements must not be used as current claims.
+
+This document preserves the team's Sprint 1 summary. The present repository state does not establish that every listed item was completed, tested, or committed on the named branch.
 
 ---
 

@@ -11,9 +11,8 @@ include "circomlib/circuits/bitify.circom";
  *
  * This circuit proves ONE thing:
  *
- *   "The published global model for round `roundNumber` is the correct
- *    sample-count-weighted average of the private per-bank weight vectors
- *    that were committed to this proof."
+ *   "For `roundNumber`, the 33 quantized output-layer values in this witness
+ *    have the claimed sample-count-weighted integer average and commitment."
  *
  * It does NOT prove:
  *   - that any bank's local training was performed correctly
@@ -24,15 +23,16 @@ include "circomlib/circuits/bitify.circom";
  *     scope for this project's timeline (this is the "don't boil the ocean"
  *     call flagged in the Week 2 plan)
  *
- * In one line for the README: "proves correct aggregation arithmetic across
- * bank submissions, not correctness of what any bank trained."
+ * The source generator also checks that the client values and exact Flower
+ * example counts reproduce that round's floating-point output layer within
+ * fixed-point tolerance. The on-chain proof itself covers only the quantized
+ * arithmetic statement above, not the full model or local training.
  *
  * ----------------------------------------------------------------------------
  * WHY WEIGHTED AVERAGE, NOT PLAIN AVERAGE
- * server.py / FedAvg weights each client's contribution by its local sample
- * count (standard FedAvg). This circuit mirrors that: each bank submits its
- * local weights AND its local sample count, and the proof shows the global
- * weights are the sample-count-weighted mean of the four.
+ * server.py / FedAvg weights each client's contribution by its reported
+ * `num_examples`. The input exporter takes those exact counts from Flower fit
+ * results; it must never infer them from the full bank CSV row count.
  *
  * ----------------------------------------------------------------------------
  * WHY OFFSET-ENCODED FIXED-POINT INTEGERS (documented simplification)
@@ -110,7 +110,7 @@ template AmlVerify(numClients, numParams, bitWidth) {
     // ---- public output ----
     // Compact commitment to the aggregated global weight vector, so the
     // full ~15k-float model never has to touch the chain — only this hash
-    // does. proof.json's "public signals" = [roundNumber, globalCommitment].
+    // does. Public signals are [globalCommitment, roundNumber, totalSamples].
     signal output globalCommitment;
 
     // 1) sample counts must actually sum to the claimed public total
@@ -159,7 +159,7 @@ template AmlVerify(numClients, numParams, bitWidth) {
     globalCommitment <== chain[numParams];
 }
 
-// Demo-scale default: 4 banks, output-layer-only (33 params: 32 weights + 1
+// Demo-scale scope: 4 clients, output-layer-only (33 params: 32 weights + 1
 // bias from GraphAwareMLP's final Linear(32,1)), 64-bit range checks (plenty
 // for fixed-point weights scaled by 10^6 — see generate_circuit_input.js).
 component main {public [roundNumber, totalSamples]} = AmlVerify(4, 33, 64);

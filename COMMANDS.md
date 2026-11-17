@@ -1,173 +1,71 @@
-# VFI — Master Commands Reference Guide
+# VFI command guide
 
-This document contains every command required to set up, preprocess data, train models, verify zero-knowledge proofs on the blockchain, run the enterprise web UI, and execute automated test suites.
+These commands run the local prototype. The four clients are randomized shards of centrally preprocessed training data, not independently provisioned banks. Preprocessing overwrites its generated splits and model inputs, so preserve artifacts for any run you need to retain.
 
----
-
-## 📋 Table of Contents
-1. [Environment & Installation](#1-environment--installation)
-2. [End-to-End System Execution (Order-Wise)](#2-end-to-end-system-execution-order-wise)
-3. [Automated Testing Suite (45 Tests)](#3-automated-testing-suite-45-tests)
-4. [Alternative Quick Demos](#4-alternative-quick-demos)
-5. [Useful Utility Commands](#5-useful-utility-commands)
-
----
-
-## 1. Environment & Installation
+## Setup
 
 ```bash
-# Clone the repository
-git clone https://github.com/ananyalakshmi9/Verifiable-Federated-Intelligence.git
-cd Verifiable-Federated-Intelligence
-
-# Install Python requirements (PyTorch, Flower, NetworkX, Scikit-learn, etc.)
 pip install -r requirements.txt
-
-# Install root Node.js dependencies
 npm install
-
-# Install blockchain Hardhat dependencies
 cd blockchain && npm install && cd ..
-
-# Install dashboard dependencies
-cd dashboard && npm install && cd ..
 ```
 
----
+## Preprocessing
 
-## 2. End-to-End System Execution (Order-Wise)
-
-Follow these steps sequentially to run the full pipeline from raw data to web application:
-
-### Step 1: Preprocess Dataset & Extract Graph Features
-Processes `data/amlnet.csv`, calculates PageRank, degree centrality, clustering coefficients, trains the GAT encoder, balances classes via SMOTE (50:50), and partitions data into 4 bank silos:
 ```bash
-# Full dataset run (all 1.09M raw transactions):
-python3 data/preprocess.py
-
-# Optional: Fast sample run (~30 seconds for quick testing):
-python3 data/preprocess.py --sample-size 20000
+python data/preprocess.py
+# Optional quick sample; not directly comparable to the full-data run
+python data/preprocess.py --sample-size 20000
 ```
-*Outputs generated:*
-- `data/processed_partition_best.csv` (264,532 balanced training rows)
-- `fl_implementation/data/bank_1.csv` through `bank_4.csv` (66,133 rows per bank)
-- `fl_implementation/data/global_test.csv` (33,172 holdout test transactions)
 
----
+The current pipeline creates chronological train/validation/test periods, constructs history-based features, fits scaler/PCA transforms on training rows only, applies no resampling, then shuffles the training feature rows into four client shards. Inspect `data/preprocess_manifest.json` after preprocessing. The retriever can fall back to mock data; verify the input source and checksum.
 
-### Step 2: Federated Learning Training (Flower)
+## Federated training
 
-#### **Terminal 1: Start the Flower Aggregation Server**
+Start the server in one terminal:
+
 ```bash
-python3 fl_implementation/server.py --rounds 10 --min-clients 4
+python fl_implementation/server.py --rounds 10 --min-clients 4
 ```
-*(Leave this running — it listens on port 8080)*
 
-#### **Terminal 2: Launch the 4 Bank Clients**
-Open a new terminal tab and run:
+Start the clients in separate terminals:
+
 ```bash
-python3 fl_implementation/client.py --cid 1 & python3 fl_implementation/client.py --cid 2 & python3 fl_implementation/client.py --cid 3 & python3 fl_implementation/client.py --cid 4 &
+python fl_implementation/client.py --cid 1
+python fl_implementation/client.py --cid 2
+python fl_implementation/client.py --cid 3
+python fl_implementation/client.py --cid 4
 ```
-*(Trains across 10 rounds using DP-SGD privacy, reaches 99.56% F1, and exports models to `schemas/global_model_round_*.json`)*
 
----
+The server uses validation metrics for round and threshold selection, then writes a separate final-test record. Review `schemas/global_model_round_10.json` and `schemas/final_evaluation.json` together; do not treat a validation score as a final-test score.
 
-### Step 3: Start Local Blockchain Node
+## Validation-only model screening
 
-#### **Terminal 3: Start Hardhat Node**
+Compare client learning rates across seeds without evaluating or overwriting the final-test record:
+
 ```bash
-cd blockchain && npx hardhat node
+python evaluation/run_fl_validation_sweep.py --rounds 5 --seeds 42,43 --weights 10 --learning-rates 0.0005,0.001,0.002 --noise-multipliers 0.5 --fedprox-mus 0.0 --no-dp-diagnostic --skip-finalize
 ```
-*(Leave this running — provides the local EVM JSON-RPC ledger at http://127.0.0.1:8545)*
 
----
+This keeps the current DP noise multiplier and positive-class weight fixed, selects using validation F1, and writes a sweep report under `evaluation/`. Repeatedly consulting the existing test split makes it development evidence rather than a fresh blind result; use rolling-origin validation across time periods when no new holdout data is available.
 
-### Step 4: Deploy Smart Contracts & Record ZK Proof
+## Proof and ledger demo
 
-In **Terminal 2** (project root):
+Use the project scripts under `blockchain/` to launch a local Hardhat node, deploy the verifier contracts, generate the proof, and submit a round. The proof is scoped to the 33 quantized output-layer values; it does not prove full-model training or accuracy. Consult `zkp/circuit/aml_verify.circom` before describing what is verified.
 
-#### 4A. Deploy AML Verifier Contracts
+## Centralized baseline
+
 ```bash
-npm run blockchain:deploy
+python evaluation/compare_baseline.py --epochs 10
 ```
-*Deploys `Groth16Verifier.sol` and `AMLVerifier.sol` to the local network.*
 
-#### 4B. Generate Groth16 Proof & Submit On-Chain
-```bash
-npm run blockchain:submit
-```
-*Quantizes weights, generates BN254 Groth16 proof, and verifies + records round on-chain in Block #3.*
+This trains a pooled-data model, selects epoch/threshold using validation, and records a final-test baseline. It does not provide the data locality or DP properties of the FL experiment.
 
----
+## Dashboard and tests
 
-### Step 5: Launch the Enterprise Web UI
-
-In **Terminal 2**:
 ```bash
 npm run dashboard
-```
-
-Open your browser to:
-- **Bank Operator Console:** [http://localhost:3000](http://localhost:3000)
-- **Regulatory Audit Portal:** [http://localhost:3000/regulator.html](http://localhost:3000/regulator.html)
-
----
-
-## 3. Automated Testing Suite (45 Tests)
-
-The repository includes a comprehensive 45-test suite covering data preprocessing, PyTorch models, DP-SGD privacy, Circom ZK circuits, Hardhat smart contracts, and backend REST APIs.
-
-### Run ALL 45 Tests in One Command
-```bash
 npm test
 ```
 
-### Run Individual Test Suites
-```bash
-# 1. Python Pytest Suite (27 tests: preprocessing, FL model, DP-SGD, ZK circuits)
-pytest tests/ -v
-# or
-npm run test:python
-
-# 2. Hardhat Solidity Contract Suite (11 tests: pairing precompile, replay protection, ZK verification)
-cd blockchain && npx hardhat test
-# or
-npm run test:contracts
-
-# 3. Backend Express API Suite (7 tests: REST endpoints, live blockchain RPC, concurrency)
-node tests/test_backend_api.js
-# or
-npm run test:api
-```
-
----
-
-## 4. Alternative Quick Demos
-
-### Automated Terminal Showcase Demo
-Runs data verification, model aggregation, ZK witness generation, proof creation, and off-chain/on-chain checks in a single automated script:
-```bash
-npm run demo
-# or
-node demo/run_demo.js
-```
-
----
-
-## 5. Useful Utility Commands
-
-```bash
-# Verify on-chain ledger records via CLI:
-cd blockchain && npx hardhat test
-
-# Check dashboard backend health:
-curl http://localhost:3000/api/status
-curl http://localhost:3000/api/rounds
-curl http://localhost:3000/api/blockchain
-
-# Verify Circom inputs:
-npm run zk:input
-
-# Generate ZK proof directly:
-node zkp/generate_proof.js
-```
+The checked-in test report describes a historical test record and includes old resampling assumptions. The current implementation was not re-tested during this documentation update. See `docs/TEST_RESULTS.md` for the test inventory and caveat, and `docs/CURRENT_PIPELINE_RESULTS.md` for result interpretation.

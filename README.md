@@ -1,220 +1,54 @@
 # Verifiable Federated Intelligence (VFI)
 
-> **Decentralized, Privacy-Preserving Anti-Money Laundering (AML) Intelligence with Zero-Knowledge Proofs & On-Chain Auditability.**
+VFI is a local proof of concept that combines transaction preprocessing, a Flower federated-learning loop over four simulated clients, DP-SGD client training, a narrowly scoped Groth16 aggregation proof, and smart-contract audit logging.
 
-[![Automated Tests](https://img.shields.io/badge/Tests-45%20Passed%20%7C%200%20Failed-brightgreen)](docs/TEST_RESULTS.md)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Zero Knowledge](https://img.shields.io/badge/ZKP-Groth16%20%7C%20Circom%202.2-purple.svg)](zkp/circuit/aml_verify.circom)
-[![Differential Privacy](https://img.shields.io/badge/DP--SGD-(ε=3.84,%20δ=1e--5)-success.svg)](fl_implementation/client.py)
+The prototype is not a deployment across real banks. Raw data are centrally preprocessed before the pooled training rows are randomized into four client shards. The current classifier is an MLP over 32 PCA-transformed graph-informed transaction features. The ZK circuit proves a sample-count-weighted relation for 33 quantized output-layer values; it does not prove full-model training or prediction accuracy.
 
----
+## Current evidence
 
-## 📐 System Architecture
+The original near-99.7% F1 figures came from a leaky pipeline and are invalid as generalization results. The current saved round-10 artifact reports **71.22% validation F1**. The saved final evaluation separately reports **67.88% final-test F1**. These numbers must not be interchanged. The split counts, confusion matrices, threshold, centralized baseline record, and artifact limitations are documented in [`docs/CURRENT_PIPELINE_RESULTS.md`](docs/CURRENT_PIPELINE_RESULTS.md).
 
-```mermaid
-graph TD
-    subgraph Decentralized Bank Silos
-        B1["Bank A Node (Client 1)"] -->|"DP-SGD Local Updates"| FLServer["Flower FL Aggregator"]
-        B2["Bank B Node (Client 2)"] -->|"DP-SGD Local Updates"| FLServer
-        B3["Bank C Node (Client 3)"] -->|"DP-SGD Local Updates"| FLServer
-        B4["Bank D Node (Client 4)"] -->|"DP-SGD Local Updates"| FLServer
-    end
+The current preprocessing manifest records 1,090,172 rows split chronologically into 763,121 train, 109,017 validation, and 218,034 test rows. Positive counts are 1,226, 217, and 302. Resampling is `none`. See [`data/preprocess_manifest.json`](data/preprocess_manifest.json) and [`docs/DATA_INTEGRITY.md`](docs/DATA_INTEGRITY.md).
 
-    subgraph Central Coordination & Quantization
-        FLServer -->|"Exact Global Metrics & Weights"| JSON["schemas/global_model_round_N.json"]
-        JSON -->|"Fixed-Point Quantization (1e6 scale)"| ZKInputs["input.json"]
-    end
+## Run the prototype
 
-    subgraph Cryptographic Zero-Knowledge Proving
-        ZKInputs -->|"Groth16 Prover & Poseidon Hash"| SnarkEngine["Circom 2.2 / SnarkJS"]
-        SnarkEngine -->|"Groth16 Proof (BN254)"| Proof["schemas/proof.json"]
-        Proof -->|"Off-Chain Pairing Verification"| OffChainVerify["snarkjs.groth16.verify"]
-    end
-
-    subgraph Blockchain Verifier & Audit Ledger
-        OffChainVerify -->|"On-Chain Proof Submission"| AMLContract["AMLVerifier.sol"]
-        AMLContract -->|"EVM Pairing Precompile 0x08"| Groth16Contract["Groth16Verifier.sol"]
-        Groth16Contract -->|"Verify e(A,B) == e(α,β)e(x,γ)e(C,δ)"| Ledger["Immutable Round Audit Event"]
-    end
-
-    subgraph Dual-Role Compliance Dashboards
-        FLServer -->|"Live Pipeline Status"| BankAdmin["Bank Admin UI (:3000)"]
-        Ledger -->|"Immutable Verification Records"| Regulator["Regulator UI (:3000/regulator.html)"]
-    end
-```
-
----
-
-## ⚡ Quickstart Guide
-
-> 📖 **Looking for order-wise copy-pasteable commands?** See the [COMMANDS.md](COMMANDS.md) and [docs/RUNBOOK.md](docs/RUNBOOK.md) guides.
-
-### 1. Prerequisites
-- **Python:** `3.10` – `3.13` (with PyTorch, Flower, scikit-learn, imbalanced-learn, networkx)
-- **Node.js:** `^18.0` – `^25.0`
-- **Circom:** `2.2.x` & **SnarkJS:** `0.7.x`
-- **Hardhat:** `2.22.x`
-
-### 2. Environment Setup
-```bash
-# Clone the repository
-git clone https://github.com/ananyalakshmi9/Verifiable-Federated-Intelligence.git
-cd Verifiable-Federated-Intelligence
-
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Install Root Node dependencies (SnarkJS, Circomlib, Ethers, Dotenv)
-npm install
-
-# Install Blockchain dependencies
-cd blockchain && npm install && cd ..
-
-# Install Dashboard dependencies
-cd dashboard && npm install && cd ..
-```
-
----
-
-## 🚀 Step-by-Step Execution Guide
-
-Run these sequential commands across your terminal tabs to execute the complete pipeline:
-
-### Step 1: Preprocess Dataset & Extract Graph Features
-```bash
-python3 data/preprocess.py
-```
-*Extracts PageRank, clustering, temporal burst features, applies SMOTE 50:50, and saves partitions to `data/processed_partition_best.csv` and `fl_implementation/data/bank_1.csv` through `bank_4.csv`.*
-
-### Step 2: Run Federated Learning (Flower)
-```bash
-# Terminal 1: Start Flower Aggregation Server
-python3 fl_implementation/server.py --rounds 10 --min-clients 4
-
-# Terminal 2: Launch the 4 Bank Clients simultaneously
-python3 fl_implementation/client.py --cid 1 & python3 fl_implementation/client.py --cid 2 & python3 fl_implementation/client.py --cid 3 & python3 fl_implementation/client.py --cid 4 &
-```
-
-### Step 3: Start Local Blockchain & Deploy Contracts
-```bash
-# Terminal 3: Start Hardhat Node
-cd blockchain && npx hardhat node
-
-# Terminal 2: Deploy AML Verifier smart contracts
-npm run blockchain:deploy
-```
-
-### Step 4: Record Zero-Knowledge Proof On-Chain
-```bash
-# Terminal 2: Generate Groth16 proof & submit to contract
-npm run blockchain:submit
-```
-
-### Step 5: Launch Enterprise Web Dashboards
-```bash
-# Terminal 2: Start Express Web Server
-npm run dashboard
-```
-Open your browser to:
-- **Bank Operator Console:** `http://localhost:3000` (Federated model metrics, baseline comparisons, node telemetry)
-- **Regulator Audit Portal:** `http://localhost:3000/regulator.html` (Cryptographic verification status, weight commitments, on-chain ledger records)
-
----
-
-## 🧪 Automated Testing
-
-The repository contains **45 comprehensive automated tests** (100% pass rate) covering data preprocessing, model training, federated learning, zero-knowledge proofs, smart contracts, backend APIs, and end-to-end integration:
+Install Python dependencies from `requirements.txt`, root Node dependencies with `npm install`, and the blockchain dependencies from `blockchain/` as needed.
 
 ```bash
-# Run ALL 45 tests in a single command
-npm test
+# Preprocess the configured CSV (this overwrites generated split artifacts)
+python data/preprocess.py
 
-# Run individual test suites:
-npm run test:python      # Pytest: Preprocessing, Model/FL, ZKP, & E2E Pipeline (27 tests)
-npm run test:contracts   # Hardhat: Groth16 EVM Pairing & AMLVerifier tests (11 tests)
-npm run test:api         # Node.js: Backend Express API & Concurrency tests (7 tests)
+# Terminal 1: start the Flower server
+python fl_implementation/server.py --rounds 10 --min-clients 4
+
+# Terminal 2: start all four simulated clients in separate shells
+python fl_implementation/client.py --cid 1
+python fl_implementation/client.py --cid 2
+python fl_implementation/client.py --cid 3
+python fl_implementation/client.py --cid 4
 ```
 
-See [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) for full benchmark timings and test details.
+The code supports a local blockchain demonstration through Hardhat and the scripts in `blockchain/`. See [`COMMANDS.md`](COMMANDS.md) for ordered commands and [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for the demo workflow. A dataset download path has a mock-data fallback; verify the actual data source and checksum before reporting experimental results.
 
----
+## Test suite
 
-## 🔐 Privacy & Cryptographic Guarantees
+Run the repository test command with `npm test` or the suites listed in `docs/TEST_RESULTS.md`. That document is a historical test record and includes some statements from an older SMOTE-era implementation. The current no-resampling implementation has not been revalidated as part of the current documentation update; do not use the old pass count as a fresh verification claim.
 
-1. **Differential Privacy (DP-SGD):**
-   - Implemented in `fl_implementation/client.py`.
-   - Gradient norm clipping: $C = 1.0$.
-   - Calibrated Gaussian noise addition: $\sigma = 0.5$.
-   - Analytical privacy budget: $(\epsilon = 3.84, \delta = 10^{-5})$.
-   - Raw customer transaction records remain strictly local within bank data silos.
+## Privacy and proof scope
 
-2. **Zero-Knowledge Proofs (Groth16):**
-   - Circuit: `zkp/circuit/aml_verify.circom` (30,229 R1CS constraints).
-   - Cryptographic commitment: Poseidon Hash over parameter matrices.
-   - Proof protocol: Groth16 over the BN254 / alt_bn128 curve.
-   - Public signals enforce the sample-count-weighted aggregation relation.
-   - Off-chain pairing verification via `zkp/verify_proof.js` / SnarkJS (~0.08 s).
+- The client contains Opacus DP-SGD with gradient clipping and Gaussian noise. The saved final evaluation reports maximum client epsilon 11.13 at delta 1e-5 and RNG mode `standard_prng_demo_only`. This is a prototype setting, not production-secure randomness.
+- The proof circuit constrains a weighted-average relation and Poseidon commitment for 33 output-layer parameters. It does not establish training correctness, data integrity, model accuracy, or metric truthfulness.
+- The ledger records proof status, hashes, and metric metadata. The model hash and metric fields are not all constrained by the ZK proof.
+- Because data preparation is pooled and the client partitions are randomized, the prototype does not demonstrate end-to-end institutional data locality or realistic bank-specific non-IID learning.
 
-3. **Smart Contract Auditability:**
-   - Contracts: `blockchain/contracts/AMLVerifier.sol` & `blockchain/contracts/Groth16Verifier.sol`.
-   - True cryptographic EVM verification: Invokes precompile `0x08` (`ecPairing`).
-   - G2 points are mapped with coordinate swap for EVM big-endian alignment.
-   - Immutable on-chain records: Round index, model weights hash, accuracy, F1-score, and submitter address.
+## Repository map
 
----
+- `data/` — input handling, causal transaction features, preprocessing manifest.
+- `models/` — PyTorch MLP classifier.
+- `fl_implementation/` — Flower server and client, simulated data shards.
+- `evaluation/` — saved validation sweeps and centralized comparison.
+- `zkp/` — Circom circuit and SnarkJS proof tools.
+- `blockchain/` — Solidity verifier/ledger, Hardhat scripts, and tests.
+- `dashboard/` — local Express API and demonstration UI.
+- `docs/` — runbook, integrity notes, project report, and result reconciliation.
 
-## 📁 Repository Structure
-
-```
-Verifiable-Federated-Intelligence/
-├── blockchain/                   # Smart contracts & Hardhat development environment
-│   ├── contracts/
-│   │   ├── AMLVerifier.sol       # AML audit registry contract
-│   │   └── Groth16Verifier.sol   # Autogenerated BN254 Groth16 pairing verifier
-│   ├── scripts/                  # Deploy & proof submission scripts
-│   └── test/                     # Hardhat unit tests (7 tests)
-├── dashboard/                    # Real-time web dashboards & Express API
-│   ├── server.js                 # API server (live RPC, model metrics, logs)
-│   ├── index.html                # Bank Admin control panel
-│   └── regulator.html            # Regulatory compliance audit ledger
-├── data/                         # AML dataset & preprocessing scripts
-│   ├── amlnet.csv                # Primary transaction dataset
-│   └── preprocess.py             # Leak-free train/test split, PCA, SMOTE
-├── demo/                         # Demonstration scripts
-│   └── run_demo.js               # Clean 10-stage live demo runner
-├── fl_implementation/            # Flower Federated Learning subsystem
-│   ├── server.py                 # FL server with exact confusion-matrix aggregation
-│   ├── client.py                 # Bank client with DP-SGD (clipping + Gaussian noise)
-│   ├── split_into_banks.py       # Decentralized 4-bank partitioner
-│   └── extract_client_weights.py # Parameter extractor & exporter
-├── models/                       # PyTorch neural network architectures
-│   └── mlp.py                    # GraphAwareMLP binary classifier
-├── schemas/                      # Dynamic JSON artifacts (rounds, metrics, proof.json)
-├── tests/                        # Automated test suites (Pytest & Node)
-│   ├── test_data_preprocessing.py
-│   ├── test_model_fl.py
-│   ├── test_zk_snark.py
-│   ├── test_e2e_pipeline.py
-│   └── test_backend_api.js
-├── zkp/                          # Zero-Knowledge Proof subsystem
-│   ├── circuit/
-│   │   ├── aml_verify.circom     # Circom R1CS aggregation verification circuit
-│   │   ├── aml_verify_final.zkey # Proving key
-│   │   └── verification_key.json # Verification key
-│   ├── generate_proof.js         # SnarkJS Groth16 fullProve runner
-│   └── verify_proof.js           # SnarkJS pairing verifier
-├── coordinate.js                 # Master pipeline coordinator
-├── orchestrate.js                # Single-command pipeline executor
-└── package.json                  # Unified test and execution scripts
-```
-
----
-
-## 🏆 Model Performance Summary
-
-- **Dataset:** AMLNet Bipartite Transaction Dataset (1,081,635 transactions).
-- **Architecture:** PyTorch `GraphAwareMLP` (32 PCA features + Graph Topological embeddings).
-- **Federated Quorum:** 4 Decentralized Bank Nodes (Flower `flwr`).
-- **Holdout Test Set Accuracy:** **99.67%**
-- **Holdout Test Set F1-Score:** **0.9967**
-- **Holdout Test Set Recall:** **99.87%** (High true-positive catch rate on illicit money flows).

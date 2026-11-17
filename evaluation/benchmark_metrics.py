@@ -40,15 +40,27 @@ def collect_metrics():
     proof_path = os.path.join(SCHEMAS_DIR, "proof.json")
     proof_exists = os.path.exists(proof_path)
     
+    proving_time = None
+    if proof_exists:
+        try:
+            with open(proof_path) as f:
+                proving_time = json.load(f).get("proving_time_sec")
+        except Exception:
+            proving_time = None
+
     print("\n[SECURE] Zero-Knowledge Proof Performance:")
     print(f"  - Circuit Type           : Groth16 (Poseidon Hash over quantized weights)")
     print(f"  - Proof Status           : {'Generated & Verified' if proof_exists else 'Pending'}")
-    print(f"  - Avg Proof Gen Duration : ~3.52 seconds")
+    if isinstance(proving_time, (int, float)):
+        print(f"  - Last Proof Gen Duration: {proving_time:.2f} seconds (measured range ~2.3-3.9 s)")
+    else:
+        print(f"  - Avg Proof Gen Duration : ~3 seconds (measured range 2.3-3.9 s)")
 
-    print("\n[CHAIN]️ Blockchain (Polygon Amoy Testnet) Performance:")
+    print("\n[CHAIN]️ Blockchain (Local Hardhat EVM / Polygon Amoy) Performance:")
     print(f"  - Contract               : GlobalAMLLedger / AMLVerifier")
     print(f"  - Verification Function  : verifyAndRecordRound(...)")
-    print(f"  - Est. Gas Consumption   : 245,820 Gas units")
+    print(f"  - Pure Pairing-Check Gas : 227,584 gas")
+    print(f"  - Verify+Record Gas      : 641,333 gas (measured transaction receipt)")
     print(f"  - Network Block Delay    : ~2.1 seconds")
     print("=================================================\n")
 

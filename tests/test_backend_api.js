@@ -45,14 +45,41 @@ function request(method, path, body = null) {
   });
 }
 
+function waitForServer(timeoutMs = 20000) {
+  const started = Date.now();
+  return new Promise((resolve, reject) => {
+    const attempt = () => {
+      const req = http.get({ hostname: "127.0.0.1", port: PORT, path: "/api/status" }, (res) => {
+        res.resume();
+        resolve();
+      });
+      req.on("error", () => {
+        if (Date.now() - started > timeoutMs) {
+          reject(new Error(`Backend server did not start within ${timeoutMs} ms`));
+        } else {
+          setTimeout(attempt, 250);
+        }
+      });
+    };
+    attempt();
+  });
+}
+
 async function runTests() {
   console.log("=== Starting Dashboard & Backend API Test Suite ===");
 
-  // 1. Spawn backend server on test port
-  const env = Object.assign({}, process.env, { PORT: PORT });
+  // 1. Spawn backend server on test port.  Dry-run mode keeps this suite from
+  // launching the real baseline/proof pipeline and overwriting canonical files.
+  const env = Object.assign({}, process.env, { PORT: PORT, VFI_PIPELINE_DRY_RUN: "1" });
   const serverProc = spawn("node", [SERVER_SCRIPT], { cwd: PROJECT_ROOT, env });
+  serverProc.stderr.on("data", (chunk) => console.error(`[backend] ${chunk.toString().trim()}`));
 
-  await new Promise((resolve) => setTimeout(resolve, 1500));
+  try {
+    await waitForServer();
+  } catch (err) {
+    serverProc.kill();
+    throw err;
+  }
 
   let passed = 0;
   let failed = 0;

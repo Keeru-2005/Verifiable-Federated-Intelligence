@@ -84,7 +84,10 @@ describe("AMLVerifier & Groth16Verifier End-to-End System", function () {
         clientCount,
         anyValue => anyValue > 0, // checks block timestamp is set
         circuitHash,
-        owner.address
+        owner.address,
+        input[0],
+        input[2],
+        "final_test_once"
       );
 
     // Retrieve ledger state from contract mappings
@@ -145,9 +148,9 @@ describe("AMLVerifier & Groth16Verifier End-to-End System", function () {
     ];
     const c = mockProofData.proof.pi_c.slice(0, 2);
     // Alter input to fail verifyProof (should revert because input doesn't match verifyProof success paths)
-    const invalidInput = ["9", "9", "9"];
+    const roundNumber = Number(mockProofData.publicSignals[1]);
+    const invalidInput = ["9", String(roundNumber), "9"];
 
-    const roundNumber = mockProofData.round_reference + 1; // Different round to not clash
     const modelWeightsHash = "0x" + mockProofData.circuit_hash.slice(2);
 
     await expect(
@@ -173,11 +176,12 @@ describe("AMLVerifier & Groth16Verifier End-to-End System", function () {
       mockProofData.publicSignals[1],
       mockProofData.publicSignals[2]
     ];
+    const roundNumber = Number(mockProofData.publicSignals[1]);
 
     await expect(
       amlVerifier.verifyAndRecordRound(
         a, b, c, tamperedInput,
-        999, "0x1234",
+        roundNumber, "0x1234",
         9500, 9200, 9000, 9100, 4,
         mockProofData.circuit_hash
       )
@@ -195,11 +199,12 @@ describe("AMLVerifier & Groth16Verifier End-to-End System", function () {
     ];
     const c = mockProofData.proof.pi_c.slice(0, 2);
     const input = mockProofData.publicSignals;
+    const roundNumber = Number(input[1]);
 
     await expect(
       amlVerifier.verifyAndRecordRound(
         corruptedA, b, c, input,
-        998, "0x1234",
+        roundNumber, "0x1234",
         9500, 9200, 9000, 9100, 4,
         mockProofData.circuit_hash
       )
@@ -214,7 +219,7 @@ describe("AMLVerifier & Groth16Verifier End-to-End System", function () {
     ];
     const c = mockProofData.proof.pi_c.slice(0, 2);
     const input = mockProofData.publicSignals;
-    const roundNumber = 50;
+    const roundNumber = Number(input[1]);
 
     await amlVerifier.verifyAndRecordRound(
       a, b, c, input,

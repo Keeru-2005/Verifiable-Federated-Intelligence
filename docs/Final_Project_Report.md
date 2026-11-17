@@ -1,43 +1,52 @@
-# Final Project Report: Verifiable Federated Intelligence
+# Verifiable Federated Intelligence: Project Implementation Report
 
-## 1. Project Overview
-The objective of this project was to construct a robust, end-to-end pipeline that combines:
-1.  **Federated Learning (FL):** Training a Graph Neural Network (`GraphAwareMLP`) collaboratively across multiple data silos (banks) without sharing raw transaction data.
-2.  **Zero-Knowledge Proofs (ZKPs):** Generating cryptographic proofs to verify the integrity and correctness of the aggregated global model.
-3.  **Blockchain Ledger:** Storing an immutable audit trail of verified FL rounds on a blockchain network (Polygon Amoy).
+## 1. Objective and scope
 
-## 2. Work Accomplished
+VFI is a proof of concept exploring how a federated-learning workflow, differential-privacy training, a zero-knowledge aggregation check, and a blockchain audit record can be connected for an AML classification task. The current experiment uses one centrally processed transaction dataset and four simulated client shards. It does not yet implement independently operated bank pipelines or production-grade privacy/security controls.
 
-### A. Data Processing & Federated Learning Integration
-*   **Data Partitioning:** We updated the `split_into_banks.py` script to generate robust train/test datasets (80/20 split) randomly distributed across 4 distinct bank clients.
-*   **Model Integration:** We restored and integrated the `GraphAwareMLP` model (a PyTorch neural network designed for Anti-Money Laundering detection) into the FL client (`client.py`) and server (`server.py`).
-*   **Pipeline Execution:** We executed the pipeline using Flower (flwr), enabling the central server to aggregate weights from the 4 banks over multiple rounds. The server outputs the model weights to `schemas/global_model_round_N.json`.
+## 2. Current implementation
 
-### B. Zero-Knowledge Proofs (zk-SNARKs)
-*   **Circuit Design:** We authored a Circom circuit (`verify_round.circom`) capable of ingesting the model weights and generating a succinct Poseidon hash as proof of knowledge.
-*   **Proof Generation:** We developed the `generate_proof.js` script which automatically parses the final FL round weights, quantizes them into field elements suitable for ZK cryptography, and generates the `proof.json`. *(Note: A mock fallback was implemented to ensure the pipeline runs seamlessly on environments missing the Circom compiler).*
+### Data and features
 
-### C. Immutable Ledger (Polygon Amoy)
-*   **Smart Contract Development:** We wrote `GlobalAMLLedger.sol`, a Solidity smart contract responsible for permanently recording the verification status and model hashes of each FL round.
-*   **Ledger Simulation:** We authored a deployment and interaction script (`deploy_ledger.js`) that simulates submitting the ZK proof results directly to the blockchain, yielding a confirmed transaction hash.
+The current preprocessor records a chronological whole-timestamp split into train, validation, and test periods before causal history feature extraction. Scaler, PCA, and post-PCA scaler are fitted on the training split. No oversampling is applied. The four client files are created by shuffling and splitting the pooled training feature table. The current classifier is a PyTorch MLP with 32 PCA-transformed features; transaction-history features inform the inputs, but the classifier is not a GNN doing graph message passing.
 
-## 3. Results and Metrics
+The saved manifest records 1,090,172 total rows: 763,121 training (1,226 positive), 109,017 validation (217 positive), and 218,034 test rows (302 positive). The dataset retrieval code has a mock-data fallback, so the exact source and checksum should be retained for a paper experiment.
 
-Our local end-to-end dry run produced highly successful results across all three layers of the architecture.
+### Federated training
 
-### Federated Learning Performance
-Over a 10-round training session across 4 simulated bank nodes, the model converged exceptionally well:
-*   **Final Loss:** `0.0145` (dropped from `0.0601`)
-*   **Final Accuracy:** `99.66%`
-*   **Final Precision:** `99.46%`
-*   **Final Recall:** `99.86%`
-*   **Final F1 Score:** `99.66%`
+Four Flower clients train locally from the simulated shards. The client uses positive-class loss weighting and contains Opacus DP-SGD. FedAvg combines the returned updates; the server selects the round and threshold on validation and evaluates a separate final-test file. The saved final evaluation reports epsilon 11.13 at delta 1e-5 and RNG mode `standard_prng_demo_only`; this is not a production-secure randomness claim.
 
-These metrics indicate that the `GraphAwareMLP` model successfully learned complex, distributed patterns indicative of money laundering, while keeping all training data decentralized.
+### Proof and ledger
 
-### ZKP & Ledger Verification
-*   **Proof Generation Time:** `~3.5 seconds`
-*   **Blockchain Submission:** The verified model hash was successfully assembled into a transaction payload and confirmed on the Ledger (e.g., Simulated Block: `15343615`).
+The Circom/Groth16 circuit proves a sample-count-weighted arithmetic relation for 33 quantized output-layer parameters and their Poseidon commitment. A Solidity contract verifies the proof and records round metadata. It does not prove local training correctness, full-model aggregation, data integrity, model accuracy, or the truth of the metric fields. Hashes and metrics stored in the contract are not all constrained by the proof.
 
-## 4. Conclusion
-The pipeline successfully demonstrates that it is possible to train a high-accuracy Anti-Money Laundering detection model across distributed financial institutions, mathematically prove its correctness using zk-SNARKs, and secure an immutable audit trail of the training process on a blockchain ledger.
+## 3. Current saved results
+
+The round-10 model artifact is a **validation** record: F1 71.22%, precision 75.65%, recall 67.28%, AP 70.42%, on 217 positives / 108,800 negatives. Its confusion matrix is `[[108753,47],[71,146]]` and its validation-selected threshold is 0.003817.
+
+The current `schemas/final_evaluation.json` is a separate **final-test** record: F1 67.88%, precision 67.88%, recall 67.88%, AP 71.67%, on 302 positives / 217,732 negatives. Its confusion matrix is `[[217635,97],[97,205]]`.
+
+Therefore, the repository evidence does not support calling 71.22% the final-test F1. The prior near-99.7% F1 values are invalid leakage-era metrics and are not current results. Accuracy is also misleading at the final-test prevalence of 0.1385%; an all-negative classifier would score approximately 99.86% accuracy.
+
+The centralized comparison JSON records a pooled-data final-test F1 of 74.01% (precision 66.49%, recall 83.44%, AP 85.02%). It has no federation or DP property. Verify its exact training configuration before making it a formal benchmark comparison.
+
+See [`CURRENT_PIPELINE_RESULTS.md`](CURRENT_PIPELINE_RESULTS.md) for the result artifacts and scope details.
+
+## 4. What this prototype demonstrates
+
+- A Flower client/server model-update workflow over four simulated data partitions.
+- Training-only numeric transform fitting and a chronological evaluation split in the saved manifest.
+- A client DP-SGD implementation with a per-run accountant record.
+- A working Groth16 circuit for a narrowly stated output-layer aggregation relation.
+- Contract-side proof verification and round metadata logging in a local EVM environment.
+
+## 5. Limitations and work needed before submission
+
+- Generate a new chronological final-test period not used in project iteration, then freeze the model, threshold, and configuration before evaluating it once.
+- Reconcile the 71.22% validation record with the saved 67.88% final-test record; preserve raw logs and per-run configuration.
+- Record input dataset provenance and checksum; verify that no mock fallback data were used.
+- Treat four clients as simulations. A cross-institution claim requires institution-aware partitions and local feature construction, or narrower claims that explicitly describe the current centralized preparation.
+- Report DP configuration and accountant scope; standard PRNG mode and epsilon must not be presented as production security.
+- Keep the ZK statement narrow and explain that model accuracy and metric truthfulness are outside the circuit.
+- Re-run and update the test suite against the current no-resampling code; the existing test report is stale in places.
+
