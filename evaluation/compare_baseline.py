@@ -21,7 +21,12 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from models.mlp import GraphAwareMLP
-from evaluation.threshold_metrics import binary_classification_metrics, select_f1_threshold
+from evaluation.ablation_logging import append_ablation_result
+from evaluation.threshold_metrics import (
+    binary_classification_metrics,
+    fit_temperature,
+    select_smoothed_thresholds,
+)
 
 LABEL_COL = "is_laundering"
 DATA_PATH = os.path.join(PROJECT_ROOT, "data", "processed_partition_best.csv")
@@ -37,67 +42,84 @@ def _feature_frame(df):
     return X_df.select_dtypes(include=[np.number])
 
 
-def load_datasets(train_path=DATA_PATH, validation_path=VALIDATION_PATH, test_path=TEST_PATH):
+def load_datasets(train_path=DATA_PATH, validation_path=VALIDATION_PATH):
     """
-    Load natural training, validation, and final-test periods from one run.
+    Load only training and validation rows for model/threshold selection.
     """
     if not os.path.exists(train_path):
         raise FileNotFoundError(f"Data file not found at {train_path}")
-    if not os.path.exists(validation_path) or not os.path.exists(test_path):
-        raise FileNotFoundError("Both global_validation.csv and global_test.csv are required.")
+    if not os.path.exists(validation_path):
+        raise FileNotFoundError("global_validation.csv is required.")
 
     train_df = pd.read_csv(train_path)
     validation_df = pd.read_csv(validation_path)
-    test_df = pd.read_csv(test_path)
 
     X_train_df = _feature_frame(train_df)
     X_validation_df = _feature_frame(validation_df).reindex(columns=X_train_df.columns, fill_value=0.0)
-    X_test_df = _feature_frame(test_df)
-    X_test_df = X_test_df.reindex(columns=X_train_df.columns, fill_value=0.0)
 
     X_train = X_train_df.values.astype(np.float32)
     y_train = train_df[LABEL_COL].values.astype(np.float32)
     X_validation = X_validation_df.values.astype(np.float32)
     y_validation = validation_df[LABEL_COL].values.astype(np.float32)
-    X_test = X_test_df.values.astype(np.float32)
-    y_test = test_df[LABEL_COL].values.astype(np.float32)
 
-    return X_train, y_train, X_validation, y_validation, X_test, y_test, X_train.shape[1]
+    return (
+        X_train, y_train, X_validation, y_validation,
+        list(X_train_df.columns), X_train.shape[1],
+    )
 
-def evaluate(model, loader, criterion, device, threshold=None):
-    """Evaluate with a supplied threshold, or select max-F1 on validation."""
+def evaluate(model, loader, criterion, device, decision_threshold=None,
+             calibrated_threshold=None, temperature=None):
+    """Evaluate using validation-fitted temperature and thresholds when omitted."""
     model.eval()
-    total_loss = 0.0
-    y_true, y_scores = [], []
+    y_true, y_logits = [], []
 
     with torch.no_grad():
         for X_batch, y_batch in loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
-            out = model(X_batch).squeeze()
-            if out.dim() == 0:
-                out = out.unsqueeze(0)
-            loss = criterion(out, y_batch)
-            total_loss += loss.item() * X_batch.size(0)
             y_true.extend(y_batch.cpu().numpy())
-            y_scores.extend(out.cpu().numpy())
+            y_logits.extend(model.forward_logits(X_batch).reshape(-1).cpu().numpy())
 
-    avg_loss = total_loss / max(1, len(y_true))
     y_true = np.asarray(y_true).astype(int)
-    y_scores = np.asarray(y_scores, dtype=np.float64)
-    if threshold is None:
-        threshold = select_f1_threshold(y_true, y_scores)
-    metrics = binary_classification_metrics(y_true, y_scores, threshold)
-    metrics["loss"] = float(avg_loss)
+    logits = np.asarray(y_logits, dtype=np.float64)
+    raw_scores = 1.0 / (1.0 + np.exp(-np.clip(logits, -80.0, 80.0)))
+    raw_thresholds = select_smoothed_thresholds(y_true, raw_scores)
+    if temperature is None:
+        temperature = fit_temperature(logits, y_true)
+    calibrated_scores = 1.0 / (
+        1.0 + np.exp(-np.clip(logits / temperature, -80.0, 80.0))
+    )
+    calibrated_thresholds = select_smoothed_thresholds(y_true, calibrated_scores)
+    if decision_threshold is None:
+        decision_threshold = raw_thresholds["f1_threshold"]
+    if calibrated_threshold is None:
+        calibrated_threshold = calibrated_thresholds["f1_threshold"]
+    metrics = binary_classification_metrics(
+        y_true, calibrated_scores, calibrated_threshold
+    )
+    metrics["decision_threshold"] = float(decision_threshold)
+    metrics["calibrated_threshold"] = float(calibrated_threshold)
+    metrics["temperature"] = float(temperature)
+    metrics["precision_at_least_0_70_threshold"] = calibrated_thresholds.get(
+        "precision_threshold"
+    )
+    metrics["precision_at_least_0_70"] = calibrated_thresholds.get(
+        "precision_threshold_precision"
+    )
+    metrics["recall_at_precision_at_least_0_70"] = calibrated_thresholds.get(
+        "precision_threshold_recall"
+    )
+    metrics["threshold_selection"] = "validation_smoothed_f1_3_point"
     try:
-        metrics["auc"] = float(roc_auc_score(y_true, y_scores))
-        metrics["average_precision"] = float(average_precision_score(y_true, y_scores))
+        metrics["auc"] = float(roc_auc_score(y_true, calibrated_scores))
+        metrics["average_precision"] = float(average_precision_score(y_true, calibrated_scores))
     except ValueError:
         metrics["auc"] = 0.5
         metrics["average_precision"] = 0.0
     return metrics
 
-def train_centralized(X_train, y_train, X_validation, y_validation, X_test, y_test,
-                      input_dim, epochs=10, batch_size=256, lr=0.001):
+def train_centralized(X_train, y_train, X_validation, y_validation, feature_columns,
+                      input_dim, epochs=10, batch_size=256, lr=0.001,
+                      test_path=TEST_PATH):
     """Select an epoch on validation, then evaluate the selected model once on test."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -109,21 +131,19 @@ def train_centralized(X_train, y_train, X_validation, y_validation, X_test, y_te
         TensorDataset(torch.tensor(X_validation), torch.tensor(y_validation)),
         batch_size=batch_size, shuffle=False
     )
-    test_loader = DataLoader(
-        TensorDataset(torch.tensor(X_test), torch.tensor(y_test)),
-        batch_size=batch_size, shuffle=False
-    )
-
     model = GraphAwareMLP(input_dim=input_dim).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     criterion = nn.BCELoss()
     train_criterion = nn.BCELoss(reduction="none")
 
     metrics_history = []
-    best_validation_f1 = -1.0
+    best_validation_ap = -1.0
     best_threshold = 0.5
+    best_calibrated_threshold = 0.5
+    best_temperature = 1.0
     best_state = None
     best_epoch = None
+    best_validation_metrics = None
     print(f"[Centralized] Training on {len(y_train)} natural rows; selecting by validation only.")
 
     for epoch in range(1, epochs + 1):
@@ -149,20 +169,43 @@ def train_centralized(X_train, y_train, X_validation, y_validation, X_test, y_te
               f"P={metrics['precision']:.4f} R={metrics['recall']:.4f} | "
               f"AP={metrics['average_precision']:.4f} | threshold={metrics['decision_threshold']:.6f}")
         metrics_history.append({"round": epoch, **metrics})
-        if metrics["f1"] > best_validation_f1:
-            best_validation_f1 = metrics["f1"]
+        if metrics["average_precision"] > best_validation_ap:
+            best_validation_ap = metrics["average_precision"]
             best_threshold = metrics["decision_threshold"]
+            best_calibrated_threshold = metrics["calibrated_threshold"]
+            best_temperature = metrics["temperature"]
             best_epoch = epoch
+            best_validation_metrics = dict(metrics)
             best_state = {key: value.detach().cpu().clone() for key, value in model.state_dict().items()}
 
     if best_state is None:
         raise RuntimeError("Centralized baseline did not produce a validation checkpoint.")
     model.load_state_dict(best_state)
-    final_test = evaluate(model, test_loader, criterion, device, threshold=best_threshold)
+    if not os.path.exists(test_path):
+        raise FileNotFoundError(f"Final-test file not found at {test_path}")
+    test_df = pd.read_csv(test_path)
+    X_test_df = _feature_frame(test_df).reindex(columns=feature_columns, fill_value=0.0)
+    y_test = test_df[LABEL_COL].to_numpy(dtype=np.float32)
+    test_loader = DataLoader(
+        TensorDataset(
+            torch.tensor(X_test_df.to_numpy(dtype=np.float32)),
+            torch.tensor(y_test),
+        ),
+        batch_size=batch_size,
+        shuffle=False,
+    )
+    final_test = evaluate(
+        model,
+        test_loader,
+        criterion,
+        device,
+        decision_threshold=best_threshold,
+        calibrated_threshold=best_calibrated_threshold,
+        temperature=best_temperature,
+    )
     final_test["selected_epoch"] = best_epoch
     final_test["evaluation"] = "final_test_once"
-    final_test["threshold_selection"] = "validation_max_f1"
-    return metrics_history, final_test
+    return metrics_history, final_test, best_validation_metrics
 
 def load_federated_metrics(run_id):
     # Search for global_model_round_*.json
@@ -284,20 +327,45 @@ def main():
         if manifest.get("pipeline_version") != "causal-v3" or manifest.get("status") != "complete":
             raise RuntimeError("Run causal-v3 preprocessing before creating a baseline.")
         run_id = manifest["run_id"]
-        X_train, y_train, X_validation, y_validation, X_test, y_test, input_dim = load_datasets()
+        (
+            X_train, y_train, X_validation, y_validation,
+            feature_columns, input_dim,
+        ) = load_datasets()
         if args.sample and len(X_train) > args.sample:
             idx = np.random.choice(len(X_train), args.sample, replace=False)
             X_train, y_train = X_train[idx], y_train[idx]
         print(f"Loaded natural train: {X_train.shape[0]} rows, {int(y_train.sum())} positives; "
-              f"validation: {X_validation.shape[0]} rows; final test: {X_test.shape[0]} rows.")
+              f"validation: {X_validation.shape[0]} rows. Final test remains unopened during selection.")
     except Exception as e:
         print(f"[FAIL] Error loading data: {e}")
         sys.exit(1)
 
     # Train centralized model on the natural training partition only
-    centralized_history, centralized_test = train_centralized(
-        X_train, y_train, X_validation, y_validation, X_test, y_test,
+    centralized_history, centralized_test, centralized_validation = train_centralized(
+        X_train, y_train, X_validation, y_validation, feature_columns,
         input_dim, epochs=args.epochs
+    )
+    append_ablation_result(
+        PROJECT_ROOT,
+        run_id=f"centralized_{run_id}_{centralized_test['selected_epoch']}",
+        experiment_name="centralized_non_dp",
+        hyperparameters={
+            "data_run_id": run_id,
+            "rounds": args.epochs,
+            "selected_round": centralized_test["selected_epoch"],
+            "loss_type": "bce",
+            "pos_weight": 10.0,
+            "resampling": "none",
+            "dp_enabled": False,
+            "max_grad_norm": None,
+            "epsilon": 0.0,
+            "delta": 0.0,
+            "aggregation_strategy": "centralized",
+            "temperature": centralized_validation["temperature"],
+            "threshold_selection": centralized_validation["threshold_selection"],
+        },
+        validation_metrics=centralized_validation,
+        final_test_metrics=centralized_test,
     )
     
     # Load federated metrics

@@ -1,47 +1,52 @@
-# Current VFI Pipeline: Implementation and Results Record
+# Current VFI Pipeline Results
 
-**Status:** documentation of the current saved pipeline artifacts; this file does not claim a fresh run or test execution.
+**Status:** Four controlled validation-only runs completed; two candidates were approved for one final-test evaluation each. The formal-DP `pos_weight=25` final result is valid. The SMOTE-Tomek attempt used thresholds from a different checkpoint and is invalid; its test data were accessed once, so it must not be rerun or reported as a final score.
 
-## What the prototype currently does
+## Data protocol
 
-VFI is a local proof of concept combining chronological transaction preprocessing, a Flower-based federated training loop over four **simulated clients**, validation-based model selection, DP-SGD client training, a narrowly scoped Groth16 aggregation proof, and a smart-contract audit record. The current classifier is an MLP over 32 PCA-transformed, graph-informed transaction features. It is not a GNN classifier operating on four independently held institutional graphs.
+The canonical manifest (`data/preprocess_manifest.json`, run `abc4b575614845cdb99a25f3f91aa979`) records a chronological whole-timestamp split:
 
-The current preprocessor splits the transaction file into chronological train, validation, and test periods before causal history features are extracted. The saved manifest identifies 1,090,172 raw rows: 763,121 train rows (1,226 positives), 109,017 validation rows (217 positives), and 218,034 test rows (302 positives). The reported manifest says resampling is `none`. Scaler and PCA artifacts are fitted on the training split. The four client CSVs are produced by shuffling and equally splitting the pooled training feature table; they are simulated shards, not source-provided bank partitions. See `data/preprocess_manifest.json` and `data/preprocess.py`.
+| Split | Rows | Positive | Negative |
+|---|---:|---:|---:|
+| Train | 763,121 | 1,226 | 761,895 |
+| Validation | 109,017 | 217 | 108,800 |
+| Final test | 218,034 | 302 | 217,732 |
+| Total | 1,090,172 | 1,745 | 1,088,427 |
 
-## Federated metrics in the saved artifacts
+The scaler, PCA, and post-PCA scaler are fit on pooled training rows only, then retained as a **shared train-only feature projection** for simulated horizontal FL. Four clients are randomized shards of centrally preprocessed training rows, not independent banks. The canonical manifest states `resampling: none`; the SMOTE-Tomek ablation is an isolated client-training experiment and does not change validation or test rows.
 
-The checked-in round-10 model record is explicitly labeled `evaluation: "validation"`. It reports **71.22% validation F1**, precision 75.65%, recall 67.28%, average precision 70.42%, and ROC-AUC 97.41%, on 217 positives and 108,800 negatives. The threshold is 0.003817, selected by maximum F1 on the validation split. Its confusion matrix is `[[108753, 47], [71, 146]]` in `[[TN, FP], [FN, TP]]` order.
+## Validation-only ablation
 
-The current `schemas/final_evaluation.json` separately labels its record `final_test_once`. It reports **67.88% final-test F1**, precision 67.88%, recall 67.88%, average precision 71.67%, and ROC-AUC 99.39%, on 302 positives and 217,732 negatives. Its confusion matrix is `[[217635, 97], [97, 205]]`. The artifact also records best validation F1 as 71.22% and the selected threshold as 0.003817.
+All four runs use seed 42, FedAvg, learning rate 0.002, DP noise multiplier 0.5, max-grad-norm 1.0, dropout 0.1, up to 25 rounds, and validation average-precision early stopping with patience 5. Selection is from the latest server-selected checkpoint, not merely the raw AP maximum.
 
-Therefore, the 71.22% result is supported as a **validation F1**, not as the final-test F1, by the currently saved round and final-evaluation JSON files. The recorded final-test F1 is 67.88%. A different final-test run with F1 71.22% would need a corresponding raw run artifact before that claim can be used.
+| Candidate | Selected round | Validation F1 | Precision | Recall | PR-AUC (AP) | ROC-AUC | TP / FP / FN / TN | Raw threshold | Calibrated threshold | Epsilon |
+|---|---:|---:|---:|---:|---:|---:|---|---:|---:|---:|
+| Baseline BCE | 10 | 0.713253 | 0.747475 | 0.682028 | 0.714746 | 0.982489 | 148 / 50 / 69 / 108,750 | 0.00547861 | 0.0457910 | 7.75214 |
+| BCE, `pos_weight=25` | 10 | 0.716279 | 0.723005 | 0.709677 | 0.710067 | 0.981860 | 154 / 59 / 63 / 108,741 | 0.00252348 | 0.0310866 | 7.75214 |
+| Focal (`alpha=0.75`, `gamma=2`) | 16 | 0.688995 | 0.716418 | 0.663594 | 0.709957 | 0.984576 | 144 / 57 / 73 / 108,743 | 0.2221460 | 0.1203540 | 8.90924 |
+| BCE + client-local SMOTE-Tomek (`sampling_strategy=0.05`) | 8 | 0.751131 | 0.737778 | 0.764977 | 0.801182 | 0.991807 | 166 / 59 / 51 / 108,741 | 0.9993300 | 0.9882523 | 7.17958 nominal |
 
-## Centralized comparison artifact
+The JSON run record (`evaluation/ablation_results.json`) and per-run sweep JSON are authoritative for complete hyperparameters and metric precision.
 
-`evaluation/comparison_results.json` contains centralized validation history and a centralized final-test record. The latter reports F1 74.01%, precision 66.49%, recall 83.44%, average precision 85.02%, and confusion matrix `[[217605, 127], [50, 252]]` on the same 302-positive, 217,732-negative test partition. It was selected at epoch 4 using validation. This is a pooled-data comparison and has no federated data-locality or DP property. The JSON does not record every training hyperparameter, so treat it as a repository result record and verify its run configuration before using it as a definitive benchmark.
+## Final-test evaluations
 
-## Privacy and proof scope
+The test set was accessed once for each approved candidate. Do not tune from these results. The SMOTE-Tomek attempt is invalid due to a round-8 model paired with round-9 calibration thresholds. Its returned metrics are retained only in the candidate archive as `invalid_attempt_metrics`; canonical `final_test_metrics` is null. Do not repeat that evaluation.
 
-Client code contains Opacus DP-SGD with gradient clipping and Gaussian noise. The saved final evaluation reports a maximum client epsilon of 11.13 at delta 1e-5, but marks its RNG as `standard_prng_demo_only`. This is a prototype configuration, not a production-secure randomness claim. The DP configuration (including noise multiplier and accountant scope) should be preserved with any new run.
+| Candidate | Validation F1 | Validation AP | Final-test F1 | Final-test precision | Final-test recall | Final-test AP | Final-test ROC-AUC | TP / FP / FN / TN | Threshold (raw; calibrated) | Epsilon / delta |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| BCE, `pos_weight=25`, round 10 | 0.716279 | 0.710067 | 0.679137 | 0.600509 | 0.781457 | 0.727406 | 0.993317 | 236 / 157 / 66 / 217,575 | 0.00252348; 0.0310866 | 7.75214 / 1e-5 |
+| BCE + SMOTE-Tomek, round 8 | 0.751131 | 0.801182 | **Invalid; not reportable** | — | — | — | — | — | round-9 thresholds were used with round-8 weights | 7.17958 nominal only |
 
-The Circom circuit proves a sample-count-weighted arithmetic relation for 33 quantized output-layer values and their Poseidon commitment. The contract verifies the proof and records the round. The circuit does not prove local training correctness, full-model aggregation, training-data integrity, model accuracy, or truthfulness of the performance metrics. The model-weight hash and metric fields are ledger metadata, not values constrained by this circuit.
+For SMOTE-Tomek, the single attempted test read yielded metrics for the mismatched model/threshold pair, but those values are invalid for the selected candidate. The record is preserved for audit and is deliberately omitted from the valid metrics table.
 
-## Interpretation and limits
+The formal-DP run uses Opacus accounting at `delta=1e-5`, with `dp_rng_mode=standard_prng_demo_only`. The RNG mode is demo-only and not a production-secure randomness claim. SMOTE-Tomek epsilon is nominal because synthetic records depend on private examples; it is not a formal DP guarantee for original records.
 
-- The near-99.7% F1 values from the original leaky pipeline are invalid as generalization results and must not be reused.
-- Accuracy is not an informative headline under this prevalence: a classifier that predicts every example as negative would score about 99.86% on the current final-test split.
-- The saved split is not a new blind evaluation if it has guided repeated project iterations. If no additional data is available, use nested rolling-origin validation on the existing chronological data: select features, thresholds, and settings using only inner windows, then evaluate once on each later outer window and report the aggregate and spread. This estimates temporal generalization more robustly but does not restore blind status to a test split whose results have already influenced development.
-- The project does not yet demonstrate end-to-end local feature construction across real bank datasets. Preprocessing is pooled before the four simulated shards are created.
-- Current documentation and test-result records include older SMOTE-era and 0.6169-result descriptions. Treat those as historical only where explicitly labeled; do not mix them with the current causal-v3 result.
-- Static claims embedded in `dashboard/index.html` and `demo/run_demo.js` still contain older 0.6169/SMOTE descriptions. Those source files were not changed because this task explicitly prohibited code edits; refresh their display text before presenting the dashboard or scripted demo publicly.
+## Historical records and scope
 
-## Files of record
+Earlier saved schemas report baseline validation F1 0.714617 and final-test F1 0.680115. The older `0.7122` / `0.6788` pair came from another historical record. The four-run grid and approved evaluations above are distinct records; never combine their metrics or thresholds. The original near-99.7% F1 results are invalid due to leakage.
 
-- `data/preprocess_manifest.json` — current split, class counts, feature names, and preprocessing controls.
-- `schemas/global_model_round_10.json` — round-10 validation metrics and threshold.
-- `schemas/final_evaluation.json` — current saved final-test metrics and privacy summary.
-- `evaluation/comparison_results.json` — centralized history/final-test comparison and federated validation history.
-- `evaluation/fl_validation_sweep_20261116T184018Z_2927ee50.json` — 15-round, one-seed validation trajectory (no final test result).
-- `evaluation/fl_validation_sweep_20261117T095900Z_d403a736.json` — five-round, two-seed learning-rate screen at DP noise multiplier 0.5; learning rate 0.002 had the highest mean best validation F1 (60.05%).
-- `evaluation/fl_validation_sweep_20261117T120128Z_98a4a232.json` — ten-round, seed-42 validation-only run at learning rate 0.002; F1 71.46%, with no final-test evaluation.
+The ZK circuit constrains a sample-count-weighted relation and Poseidon commitment for 33 quantized output-layer values (32 weights and bias from `Linear(32, 1)`). It does not prove full-model training, data integrity, accuracy, or metric truthfulness. The current final-test split has guided project iteration and is development evidence, not a fresh blind estimate; future publication-quality evaluation requires a new frozen chronological holdout.
 
+The archived round-8 update for the validation winner has a successfully generated and independently verified Groth16 proof; the full Python, Hardhat, and backend suites also pass. See `docs/TEST_RESULTS.md` for exact verification scope and counts.
+
+See `evaluation/ablation_summary.md`, `docs/DIAGNOSTIC_REPORT.md`, and `docs/ABLATION_AND_OPTIMIZATION_REPORT.md` for detailed run and diagnostic records.

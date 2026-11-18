@@ -4,14 +4,14 @@
 \usepackage{url}
 \usepackage{hyperref}
 
-\title{Verifiable Federated Intelligence: Current Implementation Record and Evaluation Status}
+\title{Verifiable Federated Intelligence: Implementation and Evaluation Record}
 \author{\IEEEauthorblockN{Project Documentation Draft}}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This file records the current VFI proof-of-concept implementation for internal review; it is not a submission-ready research paper. The project connects chronological transaction preprocessing, a Flower federated-learning loop over four simulated clients, client-side DP-SGD, a Groth16 proof of a limited output-layer aggregation relation, and smart-contract audit logging. The saved round-10 artifact reports 71.22\% validation F1 on 217 positive and 108,800 negative examples. The separate current final-evaluation artifact reports 67.88\% F1 on 302 positive and 217,732 negative examples. The code does not demonstrate independently operated bank data silos: preprocessing is centralized and the four clients are randomized shards of pooled training rows. The ZK circuit does not prove full-model training, model accuracy, or truthfulness of the reported metrics.
+This paper draft records the current VFI proof-of-concept implementation for internal review and is not submission-ready. The prototype connects chronological transaction preprocessing, Flower training across four simulated clients, client-side DP-SGD, a Groth16 proof of a limited output-layer aggregation relation, and smart-contract audit logging. The dataset is split chronologically into 763,121 training, 109,017 validation, and 218,034 test rows, with 1,226, 217, and 302 positive labels. Feature transforms are fitted on pooled training rows before those rows are randomized into client shards; the clients do not represent independent financial institutions. In the validation ablation, client-local SMOTE-Tomek achieved F1 0.7511 and average precision 0.8012 at the server-selected round 8, but its one-time test attempt is invalid due to a checkpoint/threshold mismatch and is excluded from final-test claims. The valid BCE model with positive weight 25 reports validation F1 0.7163 and final-test F1 0.6791, with final-test average precision 0.7274. The test period has been consulted during project iteration and is not an untouched publication estimate. The circuit proves only a sample-count-weighted arithmetic relation for 33 quantized output-layer parameters and their Poseidon commitment; it does not prove complete model training, accuracy, or metric truthfulness.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -19,49 +19,41 @@ federated learning, AML classification, transaction features, differential priva
 \end{IEEEkeywords}
 
 \section{Document Status}
-The previous version of this file contained claims about local bank feature extraction, graph neural network training, client-local SMOTE, strict data locality, and a 0.6169 final F1 under a different experiment. Those claims did not describe the current saved pipeline and have been removed. This document is a factual implementation record pending further experimental work and paper drafting.
+This is a factual implementation record, not a submission-ready paper. The historical draft contained claims about local bank feature extraction, graph neural network training, strict data locality, and stale metrics; those do not describe the current code and are not used here.
 
 \section{Current Pipeline}
-The saved preprocessing manifest identifies run ID \texttt{abc4b575614845cdb99a25f3f91aa979}, 1,090,172 input rows, and a chronological whole-timestamp split. The train, validation, and test partitions contain 763,121, 109,017, and 218,034 rows, respectively, with 1,226, 217, and 302 positive labels. The manifest records \texttt{resampling: none}. Causal transaction-history features are constructed after the split; StandardScaler, PCA, and the post-PCA scaler are fitted on the training rows.
+The canonical manifest identifies a chronological whole-timestamp split of 1,090,172 rows: 763,121 training (1,226 positive), 109,017 validation (217 positive), and 218,034 test rows (302 positive). Causal transaction-history features follow the split. StandardScaler, PCA, and the post-PCA scaler are fit on pooled training rows. The train-only projection is shared across four randomized training shards to provide compatible feature coordinates; it is not institution-local preprocessing.
 
-The preprocessor shuffles the pooled training feature table and partitions it into four client shards. Thus, these are simulated clients, not source-provided bank partitions. Feature engineering and dimensionality reduction happen centrally before sharding. The classifier is a PyTorch MLP receiving 32 PCA-transformed features; it is not a GNN performing message passing during the federated classification phase.
+The classifier is a PyTorch MLP over 32 PCA-transformed features, not a GNN doing message passing in the classification loop. Its final layer remains \texttt{Linear(32,1)}, with 32 weights and one bias. The client uses Opacus DP-SGD, while Flower aggregates using FedAvg. The formal-DP candidate reports $\epsilon=7.75214$ at $\delta=10^{-5}$ and RNG mode \texttt{standard\_prng\_demo\_only}, which is not production-secure randomness.
 
-Flower clients train locally with positive-class loss weighting and an Opacus DP-SGD implementation. The server aggregates with FedAvg and selects the round and decision threshold using validation. The saved final-evaluation record reports maximum client $\epsilon=11.13$ at $\delta=10^{-5}$ and labels its RNG mode \texttt{standard\_prng\_demo\_only}; this does not establish production-secure randomness.
-
-\section{Saved Metrics and Artifact Reconciliation}
-Table~\ref{tab:metrics} transcribes the current result artifacts. The round-10 JSON is explicitly validation-only. The final-test result comes from \texttt{schemas/final\_evaluation.json}.
+\section{Validation Ablation and Final-Test Record}
+Four seed-42 candidates were trained with maximum 25 rounds and validation AP early stopping, patience 5. Table~\ref{tab:metrics} presents the selected validation metrics and the one valid final-test result. Final-test metrics are not available for the validation-winning SMOTE candidate: its only attempt paired round-8 weights with round-9 thresholds, so the attempt is invalid and must not be repeated.
 
 \begin{table}[t]
-\caption{Current Saved Model Results}
+\caption{Selected Validation Candidates and Valid Final-Test Record}
 \label{tab:metrics}
 \centering
 \footnotesize
-\begin{tabular}{lrr}
+\begin{tabular}{lrrrr}
 \toprule
-Metric & Validation, round 10 & Final test \\
+Candidate & Round & Val. F1 & Val. AP & Test F1 \\
 \midrule
-F1 & 71.22\% & 67.88\% \\
-Precision & 75.65\% & 67.88\% \\
-Recall & 67.28\% & 67.88\% \\
-Average precision & 70.42\% & 71.67\% \\
-Positive / negative & 217 / 108,800 & 302 / 217,732 \\
-Threshold & 0.003817 & 0.003817 \\
-Confusion matrix $[[TN,FP],[FN,TP]]$ & $[[108753,47],[71,146]]$ & $[[217635,97],[97,205]]$ \\
+Baseline BCE & 10 & 0.713253 & 0.714746 & -- \\
+BCE, positive weight 25 & 10 & 0.716279 & 0.710067 & 0.679137 \\
+Focal, $\alpha=0.75$, $\gamma=2$ & 16 & 0.688995 & 0.709957 & -- \\
+SMOTE-Tomek, strategy 0.05 & 8 & 0.751131 & 0.801182 & invalid \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Accordingly, 71.22\% is not the final-test F1 in the current saved artifacts. The earlier 73.29\% result belongs to a validation-only sweep with no final-test record. The original near-99.7\% F1 values came from a leakage-affected pipeline and are invalid as generalization evidence. The current final-test split has 0.1385\% positive prevalence; predicting every example as negative would yield approximately 99.86\% accuracy, so accuracy is not an informative headline metric.
+For the valid positive-weight candidate, final-test precision is 0.600509, recall is 0.781457, AP is 0.727406, ROC-AUC is 0.993317, and confusion counts are TP=236, FP=157, FN=66, TN=217575. Its raw and calibrated validation-selected thresholds are 0.00252348 and 0.0310866. The SMOTE-Tomek epsilon 7.17958 is nominal only because synthetic samples depend on private examples; it is not a formal guarantee for original records.
 
-The saved centralized comparison reports 74.01\% final-test F1 on the same test partition, selected at epoch 4 using validation. It is a pooled-data result and has no FL data-locality or DP property. Verify its run configuration before treating it as a definitive comparison.
+The physical final-test period has informed project iteration. A new chronological holdout must be frozen before a publication-grade final evaluation. The complete run IDs and record statuses are in \texttt{docs/CURRENT\_PIPELINE\_RESULTS.md}.
 
 \section{Cryptographic Scope}
-The Circom circuit constrains a sample-count-weighted arithmetic relation for 33 quantized output-layer parameters and their Poseidon commitment. The Solidity contract verifies the proof and records the round with associated metadata. The circuit does not prove the full model, local training, correctness of input data, predictive accuracy, or truthfulness of metric values. The stored metrics and model-weight hash are ledger metadata, not all circuit-constrained public statements.
+The Circom circuit constrains a sample-count-weighted arithmetic relation for 33 quantized output-layer parameters and their Poseidon commitment. The Solidity contract verifies the proof and records round metadata. The circuit does not prove full-model training, correctness of local training, source data integrity, model accuracy, or metric truthfulness. Hashes and metrics are not all circuit-constrained.
 
-\section{Implementation Limitations and Work Before Submission}
-The present evidence supports a software-integration proof of concept, not a deployment across banks. Before making a cross-institution privacy claim, the data pipeline should perform feature construction within independently partitioned clients, and the experiment should use institution-aware rather than randomized pooled shards. A new chronological test period should be reserved after model and threshold selection, since the current physical holdout has been reused during development. Several random seeds and a same-split baseline should be recorded with complete configuration and input-data checksums. The tests should be rerun against the current no-resampling tree; the existing test summary is historical and includes older SMOTE descriptions. Privacy claims should state the full accountant scope and demo-only RNG limitation. Proof claims must remain limited to the relation encoded in the circuit.
-
-\section{Artifact Index}
-The current data split and protocol are in \texttt{data/preprocess\_manifest.json}; validation metrics are in \texttt{schemas/global\_model\_round\_10.json}; final-test metrics are in \texttt{schemas/final\_evaluation.json}; and the centralized comparison is in \texttt{evaluation/comparison\_results.json}. See \texttt{docs/CURRENT\_PIPELINE\_RESULTS.md} for the detailed run-artifact interpretation. No code was changed as part of this documentation update.
+\section{Limitations}
+Clients are simulated randomized shards, and preprocessing is centralized. The data retriever can use mock fallback data, so source provenance and checksum must be retained for reported experiments. DP RNG is demonstrative rather than production-secure. The SMOTE-Tomek accounting does not establish a formal privacy guarantee for original records. A fresh, preregistered chronological holdout and real institution-aware partitions would be needed to support stronger deployment or generalization claims.
 
 \end{document}

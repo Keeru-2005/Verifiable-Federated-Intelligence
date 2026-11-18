@@ -12,7 +12,7 @@ The source loader (`download_dataset.py`) can fall back to standardized mock dat
 
 ## Current result records
 
-The round-10 record in `schemas/global_model_round_10.json` is validation-only: F1 71.22%, precision 75.65%, recall 67.28%, AP 70.42%, and ROC-AUC 97.41% on 217 positives / 108,800 negatives. The current `schemas/final_evaluation.json` records final-test F1 67.88%, precision and recall 67.88%, AP 71.67%, and ROC-AUC 99.39% on 302 positives / 217,732 negatives. Do not describe the 71.22% validation value as final-test performance. See `docs/CURRENT_PIPELINE_RESULTS.md` for details and run-artifact distinctions.
+The current four-run validation grid's winner is client-local SMOTE-Tomek (0.05), selected at round 8 with F1 0.751131 and AP 0.801182. Its one-time test attempt is invalid due to a round-8 model/round-9 threshold mismatch and must not be rerun. The valid BCE `pos_weight=25` final-test record has validation F1 0.716279/AP 0.710067 and final-test F1 0.679137/AP 0.727406. See `docs/CURRENT_PIPELINE_RESULTS.md` for complete metrics and the strict validation/test distinction.
 
 ## Main files
 

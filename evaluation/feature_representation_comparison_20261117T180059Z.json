@@ -1,0 +1,459 @@
+{
+  "status": "complete",
+  "evaluation": "paired_rolling_origin_feature_representation_comparison",
+  "baseline_report": "C:\\Users\\keeru\\Capstone work\\project\\Verifiable-Federated-Intelligence\\Verifiable-Federated-Intelligence\\evaluation\\rolling_origin_cv_20261117T172715Z.json",
+  "raw_input": "C:\\Users\\keeru\\Capstone work\\project\\Verifiable-Federated-Intelligence\\Verifiable-Federated-Intelligence\\data\\amlnet.csv",
+  "original_final_test_excluded": true,
+  "fresh_blind_holdout": false,
+  "note": "Each alternative uses the same saved rolling-origin windows and fixed DP-FL configuration as the PCA baseline. Transformations are fitted on that fold's training rows only; thresholds and rounds are selected on its inner validation. The historical windows are development data, not a fresh blind estimate.",
+  "model_configuration": {
+    "dp_enabled": true,
+    "noise_multiplier": 0.5,
+    "positive_loss_weight": 10.0,
+    "learning_rate": 0.002,
+    "local_epochs": 1,
+    "fedprox_mu": 0.0,
+    "rounds": 10,
+    "seed": 42
+  },
+  "representations": {
+    "pca32_baseline": {
+      "description": "Saved baseline: StandardScaler, full 32-component PCA, then a training-fitted post-PCA StandardScaler.",
+      "folds": [
+        {
+          "fold": 1,
+          "prefix_end_fraction": 0.6,
+          "train_rows": 523284,
+          "inner_validation_rows": 65410,
+          "outer_test_rows": 65410,
+          "inner_validation_positives": 119,
+          "outer_test_positives": 79,
+          "selected_round": 10,
+          "best_inner_validation_f1": 0.64,
+          "decision_threshold": 0.0081702321767807,
+          "metrics": {
+            "accuracy": 0.9993120317994191,
+            "precision": 0.7575757575757576,
+            "recall": 0.6329113924050633,
+            "f1": 0.6896551724137931,
+            "tp": 50,
+            "fp": 16,
+            "fn": 29,
+            "tn": 65315,
+            "positives": 79,
+            "negatives": 65331,
+            "support": 65410,
+            "prevalence": 0.0012077663965754473,
+            "confusion_matrix": [
+              [
+                65315,
+                16
+              ],
+              [
+                29,
+                50
+              ]
+            ],
+            "decision_threshold": 0.0081702321767807,
+            "auc": 0.9675988815668759,
+            "average_precision": 0.7438911366860468,
+            "split": "final_test_once"
+          }
+        },
+        {
+          "fold": 2,
+          "prefix_end_fraction": 0.7,
+          "train_rows": 610497,
+          "inner_validation_rows": 76312,
+          "outer_test_rows": 76312,
+          "inner_validation_positives": 90,
+          "outer_test_positives": 115,
+          "selected_round": 10,
+          "best_inner_validation_f1": 0.6863905325443788,
+          "decision_threshold": 0.010943431407213211,
+          "metrics": {
+            "accuracy": 0.9990040884788762,
+            "precision": 0.782608695652174,
+            "recall": 0.46956521739130436,
+            "f1": 0.5869565217391305,
+            "tp": 54,
+            "fp": 15,
+            "fn": 61,
+            "tn": 76182,
+            "positives": 115,
+            "negatives": 76197,
+            "support": 76312,
+            "prevalence": 0.0015069713806478667,
+            "confusion_matrix": [
+              [
+                76182,
+                15
+              ],
+              [
+                61,
+                54
+              ]
+            ],
+            "decision_threshold": 0.010943431407213211,
+            "auc": 0.9573346776747458,
+            "average_precision": 0.6064626734254976,
+            "split": "final_test_once"
+          }
+        },
+        {
+          "fold": 3,
+          "prefix_end_fraction": 0.8,
+          "train_rows": 697711,
+          "inner_validation_rows": 87214,
+          "outer_test_rows": 87213,
+          "inner_validation_positives": 142,
+          "outer_test_positives": 172,
+          "selected_round": 9,
+          "best_inner_validation_f1": 0.7090301003344481,
+          "decision_threshold": 0.009909458458423615,
+          "metrics": {
+            "accuracy": 0.9988075172279361,
+            "precision": 0.7207792207792207,
+            "recall": 0.6453488372093024,
+            "f1": 0.6809815950920245,
+            "tp": 111,
+            "fp": 43,
+            "fn": 61,
+            "tn": 86998,
+            "positives": 172,
+            "negatives": 87041,
+            "support": 87213,
+            "prevalence": 0.001972183046105512,
+            "confusion_matrix": [
+              [
+                86998,
+                43
+              ],
+              [
+                61,
+                111
+              ]
+            ],
+            "decision_threshold": 0.009909458458423615,
+            "auc": 0.9893646752412588,
+            "average_precision": 0.7060147046320806,
+            "split": "final_test_once"
+          }
+        }
+      ],
+      "mean_outer_f1": 0.6525310964149827,
+      "sample_sd_outer_f1": 0.05695459918942775,
+      "mean_outer_average_precision": 0.6854561715812083,
+      "pooled_outer_confusion_metrics": {
+        "tp": 215,
+        "fp": 74,
+        "fn": 151,
+        "tn": 228495,
+        "precision": 0.7439446366782007,
+        "recall": 0.587431693989071,
+        "f1": 0.6564885496183206
+      }
+    },
+    "standardized_raw": {
+      "description": "Train-fitted StandardScaler on the 32 causal features; no PCA.",
+      "folds": [
+        {
+          "fold": 1,
+          "prefix_end_fraction": 0.6,
+          "train_rows": 523284,
+          "inner_validation_rows": 65410,
+          "outer_test_rows": 65410,
+          "inner_validation_positives": 119,
+          "outer_test_positives": 79,
+          "selected_round": 7,
+          "best_inner_validation_f1": 0.5436893203883495,
+          "decision_threshold": 0.00036618736339733005,
+          "max_client_epsilon": 8.944799205625399,
+          "metrics": {
+            "accuracy": 0.9991285736125974,
+            "precision": 0.7291666666666666,
+            "recall": 0.4430379746835443,
+            "f1": 0.5511811023622047,
+            "tp": 35,
+            "fp": 13,
+            "fn": 44,
+            "tn": 65318,
+            "positives": 79,
+            "negatives": 65331,
+            "support": 65410,
+            "prevalence": 0.0012077663965754473,
+            "confusion_matrix": [
+              [
+                65318,
+                13
+              ],
+              [
+                44,
+                35
+              ]
+            ],
+            "decision_threshold": 0.00036618736339733005,
+            "auc": 0.960038549555535,
+            "average_precision": 0.5437498882530429,
+            "split": "final_test_once"
+          },
+          "delta_f1_vs_pca": -0.1384740700515884,
+          "delta_average_precision_vs_pca": -0.20014124843300385
+        },
+        {
+          "fold": 2,
+          "prefix_end_fraction": 0.7,
+          "train_rows": 610497,
+          "inner_validation_rows": 76312,
+          "outer_test_rows": 76312,
+          "inner_validation_positives": 90,
+          "outer_test_positives": 115,
+          "selected_round": 10,
+          "best_inner_validation_f1": 0.6931818181818181,
+          "decision_threshold": 0.00394356157630682,
+          "max_client_epsilon": 8.435462370004426,
+          "metrics": {
+            "accuracy": 0.9989909843799141,
+            "precision": 0.7375,
+            "recall": 0.5130434782608696,
+            "f1": 0.6051282051282052,
+            "tp": 59,
+            "fp": 21,
+            "fn": 56,
+            "tn": 76176,
+            "positives": 115,
+            "negatives": 76197,
+            "support": 76312,
+            "prevalence": 0.0015069713806478667,
+            "confusion_matrix": [
+              [
+                76176,
+                21
+              ],
+              [
+                56,
+                59
+              ]
+            ],
+            "decision_threshold": 0.00394356157630682,
+            "auc": 0.9738920452762319,
+            "average_precision": 0.6176309102259703,
+            "split": "final_test_once"
+          },
+          "delta_f1_vs_pca": 0.01817168338907471,
+          "delta_average_precision_vs_pca": 0.01116823680047263
+        },
+        {
+          "fold": 3,
+          "prefix_end_fraction": 0.8,
+          "train_rows": 697711,
+          "inner_validation_rows": 87214,
+          "outer_test_rows": 87213,
+          "inner_validation_positives": 142,
+          "outer_test_positives": 172,
+          "selected_round": 10,
+          "best_inner_validation_f1": 0.6741573033707865,
+          "decision_threshold": 0.0005455589271150529,
+          "max_client_epsilon": 8.008386499745605,
+          "metrics": {
+            "accuracy": 0.9987157877839313,
+            "precision": 0.7112676056338029,
+            "recall": 0.5872093023255814,
+            "f1": 0.6433121019108281,
+            "tp": 101,
+            "fp": 41,
+            "fn": 71,
+            "tn": 87000,
+            "positives": 172,
+            "negatives": 87041,
+            "support": 87213,
+            "prevalence": 0.001972183046105512,
+            "confusion_matrix": [
+              [
+                87000,
+                41
+              ],
+              [
+                71,
+                101
+              ]
+            ],
+            "decision_threshold": 0.0005455589271150529,
+            "auc": 0.955781330530413,
+            "average_precision": 0.5821440291744033,
+            "split": "final_test_once"
+          },
+          "delta_f1_vs_pca": -0.03766949318119639,
+          "delta_average_precision_vs_pca": -0.12387067545767727
+        }
+      ],
+      "mean_outer_f1": 0.599873803133746,
+      "sample_sd_outer_f1": 0.04628970538571878,
+      "mean_outer_average_precision": 0.5811749425511389,
+      "pooled_outer_confusion_metrics": {
+        "tp": 195,
+        "fp": 75,
+        "fn": 171,
+        "tn": 228494,
+        "precision": 0.7222222222222222,
+        "recall": 0.5327868852459017,
+        "f1": 0.6132075471698113
+      },
+      "mean_delta_f1_vs_pca": -0.052657293281236695,
+      "mean_delta_average_precision_vs_pca": -0.10428122903006949
+    },
+    "robust_raw": {
+      "description": "Train-fitted RobustScaler on the 32 causal features; no PCA.",
+      "folds": [
+        {
+          "fold": 1,
+          "prefix_end_fraction": 0.6,
+          "train_rows": 523284,
+          "inner_validation_rows": 65410,
+          "outer_test_rows": 65410,
+          "inner_validation_positives": 119,
+          "outer_test_positives": 79,
+          "selected_round": 9,
+          "best_inner_validation_f1": 0.6212765957446807,
+          "decision_threshold": 0.0029830927960574627,
+          "max_client_epsilon": 8.944799205625399,
+          "metrics": {
+            "accuracy": 0.9992814554349488,
+            "precision": 0.6777777777777778,
+            "recall": 0.7721518987341772,
+            "f1": 0.7218934911242604,
+            "tp": 61,
+            "fp": 29,
+            "fn": 18,
+            "tn": 65302,
+            "positives": 79,
+            "negatives": 65331,
+            "support": 65410,
+            "prevalence": 0.0012077663965754473,
+            "confusion_matrix": [
+              [
+                65302,
+                29
+              ],
+              [
+                18,
+                61
+              ]
+            ],
+            "decision_threshold": 0.0029830927960574627,
+            "auc": 0.9851255020926541,
+            "average_precision": 0.7491514961490907,
+            "split": "final_test_once"
+          },
+          "delta_f1_vs_pca": 0.03223831871046723,
+          "delta_average_precision_vs_pca": 0.005260359463043929
+        },
+        {
+          "fold": 2,
+          "prefix_end_fraction": 0.7,
+          "train_rows": 610497,
+          "inner_validation_rows": 76312,
+          "outer_test_rows": 76312,
+          "inner_validation_positives": 90,
+          "outer_test_positives": 115,
+          "selected_round": 8,
+          "best_inner_validation_f1": 0.7127659574468085,
+          "decision_threshold": 0.03002818673849106,
+          "max_client_epsilon": 8.435462370004426,
+          "metrics": {
+            "accuracy": 0.9989778802809519,
+            "precision": 0.6907216494845361,
+            "recall": 0.5826086956521739,
+            "f1": 0.6320754716981132,
+            "tp": 67,
+            "fp": 30,
+            "fn": 48,
+            "tn": 76167,
+            "positives": 115,
+            "negatives": 76197,
+            "support": 76312,
+            "prevalence": 0.0015069713806478667,
+            "confusion_matrix": [
+              [
+                76167,
+                30
+              ],
+              [
+                48,
+                67
+              ]
+            ],
+            "decision_threshold": 0.03002818673849106,
+            "auc": 0.9723930703650892,
+            "average_precision": 0.631178514803216,
+            "split": "final_test_once"
+          },
+          "delta_f1_vs_pca": 0.04511894995898269,
+          "delta_average_precision_vs_pca": 0.024715841377718317
+        },
+        {
+          "fold": 3,
+          "prefix_end_fraction": 0.8,
+          "train_rows": 697711,
+          "inner_validation_rows": 87214,
+          "outer_test_rows": 87213,
+          "inner_validation_positives": 142,
+          "outer_test_positives": 172,
+          "selected_round": 5,
+          "best_inner_validation_f1": 0.6915254237288136,
+          "decision_threshold": 0.007168748881667852,
+          "max_client_epsilon": 8.008386499745605,
+          "metrics": {
+            "accuracy": 0.9987616525059337,
+            "precision": 0.6839080459770115,
+            "recall": 0.6918604651162791,
+            "f1": 0.6878612716763005,
+            "tp": 119,
+            "fp": 55,
+            "fn": 53,
+            "tn": 86986,
+            "positives": 172,
+            "negatives": 87041,
+            "support": 87213,
+            "prevalence": 0.001972183046105512,
+            "confusion_matrix": [
+              [
+                86986,
+                55
+              ],
+              [
+                53,
+                119
+              ]
+            ],
+            "decision_threshold": 0.007168748881667852,
+            "auc": 0.9805392099366164,
+            "average_precision": 0.7103932634243743,
+            "split": "final_test_once"
+          },
+          "delta_f1_vs_pca": 0.006879676584276018,
+          "delta_average_precision_vs_pca": 0.004378558792293652
+        }
+      ],
+      "mean_outer_f1": 0.6806100781662247,
+      "sample_sd_outer_f1": 0.04534593707157636,
+      "mean_outer_average_precision": 0.6969077581255603,
+      "pooled_outer_confusion_metrics": {
+        "tp": 247,
+        "fp": 114,
+        "fn": 119,
+        "tn": 228455,
+        "precision": 0.6842105263157895,
+        "recall": 0.674863387978142,
+        "f1": 0.6795048143053645
+      },
+      "mean_delta_f1_vs_pca": 0.028078981751241978,
+      "mean_delta_average_precision_vs_pca": 0.011451586544351966
+    }
+  },
+  "pca_diagnostic": {
+    "input_feature_count": 32,
+    "pca_component_count": 32,
+    "interpretation": "PCA retains all 32 input dimensions; it is a rotation/scaling representation, not dimensionality reduction."
+  }
+}

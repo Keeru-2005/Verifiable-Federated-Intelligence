@@ -62,6 +62,19 @@ blockchain/node_modules/
 blockchain/artifacts/
 blockchain/cache/
 fl_implementation/__pycache__/
-schemas/
 fl_implementation/privacy_accountant_*.json
 zkp/circuit/private_inputs/
+
+# Ignore generated logs and per-round sweeps, but keep canonical schema JSON/metadata visible.
+schemas/client_*.log
+schemas/server.log
+schemas/round_updates/
+schemas/validation_sweeps/
+
+# Keep finalized candidate checkpoints with their canonical evaluation archives.
+!evaluation/finalized_candidates/**/*.pt
+
+# Local experiment scratch and temporary outputs
+evaluation/__pycache__/
+evaluation/*.tmp
+evaluation/.tmp*/

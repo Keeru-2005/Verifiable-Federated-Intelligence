@@ -1,0 +1,45 @@
+{
+  "run_id": "abc4b575614845cdb99a25f3f91aa979",
+  "selected_round": 10,
+  "selection_metric": "validation_f1",
+  "best_validation_f1": 0.7146171693735499,
+  "decision_threshold": 0.0023786351084709167,
+  "threshold_selection": "validation_max_f1",
+  "client_fit_summary": {
+    "dp_enabled_clients": 4,
+    "max_client_epsilon": 12.483997769713651,
+    "delta": 1e-05,
+    "dp_accountant": "rdp",
+    "dp_rng_mode": "standard_prng_demo_only"
+  },
+  "evaluation": "final_test_once",
+  "metrics": {
+    "accuracy": 0.9989818101763945,
+    "precision": 0.6020408163265306,
+    "recall": 0.7814569536423841,
+    "f1": 0.6801152737752162,
+    "tp": 236,
+    "fp": 156,
+    "fn": 66,
+    "tn": 217576,
+    "positives": 302,
+    "negatives": 217732,
+    "support": 218034,
+    "prevalence": 0.0013851050753552199,
+    "confusion_matrix": [
+      [
+        217576,
+        156
+      ],
+      [
+        66,
+        236
+      ]
+    ],
+    "decision_threshold": 0.0023786351084709167,
+    "auc": 0.9933498886108605,
+    "average_precision": 0.7289046164592585,
+    "split": "final_test_once"
+  },
+  "timestamp": "2026-11-17T13:46:04.768719Z"
+}

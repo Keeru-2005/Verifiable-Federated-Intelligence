@@ -152,18 +152,34 @@ app.get("/api/rounds", (req, res) => {
 
 // Final metrics are distinct from the per-round validation metrics.
 app.get("/api/final-evaluation", (req, res) => {
-  const finalEvaluationPath = path.join(schemasDir, "final_evaluation.json");
+  const resultPath = path.join(evaluationDir, "ablation_results.json");
   const manifestPath = path.join(projectRoot, "data", "preprocess_manifest.json");
-  if (!fs.existsSync(finalEvaluationPath)) {
+  if (!fs.existsSync(resultPath)) {
     return res.status(404).json({ error: "No final evaluation is available for the current run." });
   }
   try {
-    const finalEvaluation = JSON.parse(fs.readFileSync(finalEvaluationPath, "utf8"));
+    const records = JSON.parse(fs.readFileSync(resultPath, "utf8"));
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-    if (manifest.status !== "complete" || finalEvaluation.run_id !== manifest.run_id) {
+    if (manifest.status !== "complete" || !Array.isArray(records)) {
+      return res.status(404).json({ error: "No final evaluation is available for the current run." });
+    }
+    const finalEvaluation = records
+      .filter(record =>
+        record.status === "completed" &&
+        record.hyperparameters?.data_run_id === manifest.run_id &&
+        typeof record.final_test_metrics?.f1 === "number"
+      )
+      .sort((left, right) => left.timestamp.localeCompare(right.timestamp))
+      .pop();
+    if (!finalEvaluation) {
       return res.status(404).json({ error: "Final evaluation is stale for the current preprocessing run." });
     }
-    res.json(finalEvaluation);
+    res.json({
+      ...finalEvaluation,
+      evaluation: "final_test_once",
+      metrics: finalEvaluation.final_test_metrics,
+      decision_threshold: finalEvaluation.final_test_metrics.decision_threshold,
+    });
   } catch (err) {
     res.status(500).json({ error: "Failed to read final evaluation: " + err.message });
   }
@@ -404,45 +420,29 @@ app.get("/api/proof/latest", (req, res) => {
 // Endpoint to provide privacy and compliance parameters
 app.get("/api/compliance", (req, res) => {
   res.json({
-    framework: "Differential Privacy with DP-SGD (Gaussian Mechanism)",
+    framework: "Opacus DP-SGD prototype (Gaussian mechanism)",
     clippingNormC: 1.0,
     noiseMultiplierSigma: 0.5,
-    targetEpsilon: 3.84,
-    targetDelta: 1e-5,
-    sampleRateQ: "64 / 180,272 (per bank partition)",
-    stepsPerRound: 2817,
-    accountingMethod: "Moments Accountant (Renyi DP Bound)",
-    dataLocalityGuarantee: "Zero raw PII or banking transaction records leave client perimeter",
-    resamplingRule: "SMOTE synthetics restricted exclusively to local training shards; holdout evaluation strictly unaltered",
-    status: "Compliant"
+    reportedEpsilon: 7.752135362114015,
+    reportedDelta: 1e-5,
+    accountingMethod: "Opacus RDP accountant",
+    rngMode: "standard_prng_demo_only",
+    dataLocalityScope: "Pooled preprocessing precedes randomized simulated client shards; institution-locality is not demonstrated",
+    resamplingRule: "Canonical manifest uses none; optional client-local SMOTE-Tomek ablation has nominal-only epsilon",
+    status: "Prototype; no regulatory compliance assessment"
   });
 });
 
 // Endpoint to provide Byzantine fault tolerance and security events
 app.get("/api/security", (req, res) => {
   res.json({
-    byzantineFilter: "Active L2-Norm & Tensor Topology Inspection",
-    maxTolerableL2Norm: 150.0,
+    telemetryScope: "Demo endpoint; no production Byzantine-monitoring system is implemented",
+    byzantineFilter: "Not implemented in the current training pipeline",
     expectedTensors: 33,
     expectedInputDimension: 32,
-    rejectedAnomalies: [
-      {
-        timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-        clientId: "sim_adversary_node_ext",
-        threatType: "Extreme L2 Weight Poisoning (Norm: 10,000.0 > 150.0)",
-        actionTaken: "Update Dropped Prior to FedAvg Aggregation",
-        quarantined: true
-      },
-      {
-        timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
-        clientId: "sim_adversary_nan_inj",
-        threatType: "NaN / Inf Numerical Injection Attack",
-        actionTaken: "Dropped by EarlyStoppingFedAvg Pre-validation",
-        quarantined: true
-      }
-    ],
-    activeConsensusQuorum: "4 / 4 Bank Nodes Required",
-    quorumEnforcement: "Strict Quorum — Refuses partial/corrupted aggregation upon node failure"
+    rejectedAnomalies: [],
+    activeConsensusQuorum: "4 simulated clients configured",
+    quorumEnforcement: "Flower client-count configuration; no Byzantine fault-tolerance guarantee"
   });
 });
 

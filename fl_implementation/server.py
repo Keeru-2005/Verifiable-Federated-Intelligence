@@ -13,14 +13,18 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from models.mlp import GraphAwareMLP
-from evaluation.threshold_metrics import binary_classification_metrics, select_f1_threshold
+from evaluation.threshold_metrics import (
+    binary_classification_metrics,
+    fit_temperature,
+    select_smoothed_thresholds,
+)
 
 
 import argparse
 import pandas as pd
 import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
-from sklearn.metrics import average_precision_score
+from sklearn.metrics import average_precision_score, roc_auc_score
 
 
 def _load_manifest():
@@ -40,10 +44,14 @@ def get_eval_fn(test_csv_path, split_name="validation"):
     evaluator may be used for round selection; the final-test evaluator must only
     be called once after the best validation round is selected.
     """
-    if not os.path.exists(test_csv_path):
+    if split_name != "final_test_once" and not os.path.exists(test_csv_path):
         return None
 
-    try:
+    cached = {}
+
+    def load_holdout():
+        if not os.path.exists(test_csv_path):
+            raise FileNotFoundError(f"Holdout CSV not found: {test_csv_path}")
         df = pd.read_csv(test_csv_path)
         X_df = df.drop(
             columns=['is_laundering', 'sender', 'receiver', 'timestamp', 'nameOrig',
@@ -63,46 +71,71 @@ def get_eval_fn(test_csv_path, split_name="validation"):
             TensorDataset(torch.tensor(X), torch.tensor(y)),
             batch_size=256, shuffle=False,
         )
-        input_dim = X.shape[1]
-        n_positive = int((y == 1).sum())
-        n_negative = int((y == 0).sum())
-    except Exception as e:
-        print(f"[WARN] Could not load holdout test set for centralized evaluation: {e}")
-        return None
+        return test_loader, X.shape[1]
 
     def evaluate(server_round, parameters, config):
+        if "holdout" not in cached:
+            cached["holdout"] = load_holdout()
+        test_loader, input_dim = cached["holdout"]
         model = GraphAwareMLP(input_dim=input_dim)
         # Flower may pass either a Parameters object or a list of ndarrays.
         if not isinstance(parameters, (list, tuple)):
             parameters = parameters_to_ndarrays(parameters)
         model.set_parameters(parameters)
         criterion = torch.nn.BCELoss()
-        loss, auc, _, _ = model.evaluate(test_loader, criterion)
+        loss, _, _, _ = model.evaluate(test_loader, criterion)
 
         # Exact precision/recall/confusion matrix on the global holdout
         model.eval()
-        y_true, y_scores = [], []
+        y_true, y_logits = [], []
         with torch.no_grad():
             for X_batch, y_batch in test_loader:
-                out = model(X_batch).squeeze()
-                if out.dim() == 0:
-                    out = out.unsqueeze(0)
+                out = model.forward_logits(X_batch).reshape(-1)
                 y_true.extend(y_batch.numpy())
-                y_scores.extend(out.numpy())
+                y_logits.extend(out.numpy())
 
         y_true = np.asarray(y_true, dtype=np.int32)
-        y_scores = np.asarray(y_scores, dtype=np.float64)
+        y_logits = np.asarray(y_logits, dtype=np.float64)
+        raw_scores = 1.0 / (1.0 + np.exp(-np.clip(y_logits, -80.0, 80.0)))
         if split_name == "validation":
-            # Select the operating threshold on validation only. The final-test
-            # evaluator receives this frozen threshold through its config.
-            threshold = select_f1_threshold(y_true, y_scores)
+            temperature = fit_temperature(y_logits, y_true)
+            y_scores = 1.0 / (
+                1.0 + np.exp(-np.clip(y_logits / temperature, -80.0, 80.0))
+            )
+            raw_thresholds = select_smoothed_thresholds(y_true, raw_scores)
+            calibrated_thresholds = select_smoothed_thresholds(y_true, y_scores)
+            decision_threshold = raw_thresholds["f1_threshold"]
+            calibrated_threshold = calibrated_thresholds["f1_threshold"]
         else:
-            threshold = float(config.get("decision_threshold", 0.5))
-        metrics = binary_classification_metrics(y_true, y_scores, threshold)
+            temperature = float(config.get("temperature", 1.0))
+            decision_threshold = float(config.get("decision_threshold", 0.5))
+            calibrated_threshold = float(config.get("calibrated_threshold", 0.5))
+            y_scores = 1.0 / (
+                1.0 + np.exp(-np.clip(y_logits / temperature, -80.0, 80.0))
+            )
+            raw_thresholds = {"f1_threshold": decision_threshold}
+            calibrated_thresholds = {"f1_threshold": calibrated_threshold}
+
+        metrics = binary_classification_metrics(
+            y_true, y_scores, calibrated_threshold
+        )
         metrics.update({
-            "auc": float(auc),
+            "auc": float(roc_auc_score(y_true, y_scores)),
             "average_precision": float(average_precision_score(y_true, y_scores)),
             "split": split_name,
+            "decision_threshold": float(decision_threshold),
+            "calibrated_threshold": float(calibrated_threshold),
+            "temperature": float(temperature),
+            "precision_at_least_0_70_threshold": calibrated_thresholds.get(
+                "precision_threshold"
+            ),
+            "precision_at_least_0_70": calibrated_thresholds.get(
+                "precision_threshold_precision"
+            ),
+            "recall_at_precision_at_least_0_70": calibrated_thresholds.get(
+                "precision_threshold_recall"
+            ),
+            "threshold_selection": "validation_smoothed_f1_3_point",
         })
         return float(loss), metrics
 
@@ -115,27 +148,104 @@ def aggregate_privacy_metrics(client_metrics):
     enabled = [row for row in rows if row.get("dp_enabled") and row.get("dp_epsilon") is not None]
     if not enabled:
         return {"dp_enabled_clients": 0, "dp_rng_mode": "disabled"}
+    accounting_validity = {
+        row.get("dp_accounting_validity", "standard_opacus_accounting")
+        for row in enabled
+    }
     return {
         "dp_enabled_clients": len(enabled),
         "max_client_epsilon": max(float(row["dp_epsilon"]) for row in enabled),
         "delta": max(float(row.get("dp_delta", 0.0)) for row in enabled),
         "dp_accountant": "rdp",
         "dp_rng_mode": "standard_prng_demo_only",
+        "dp_accounting_validity": (
+            "not_formally_valid_for_original_records_after_synthetic_resampling"
+            if any(value != "standard_opacus_accounting" for value in accounting_validity)
+            else "standard_opacus_accounting"
+        ),
     }
 
 
 # Validation-selected FedAvg with one final-test evaluation after training.
 class EarlyStoppingFedAvg(fl.server.strategy.FedAvg):
-    def __init__(self, target_rounds, final_evaluate_fn=None, min_delta=0.0002, *args, **kwargs):
+    def __init__(self, target_rounds, final_evaluate_fn=None, min_delta=0.0002,
+                 patience=5, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.target_rounds = target_rounds
         self.final_evaluate_fn = final_evaluate_fn
         self.min_delta = min_delta
+        self.patience = patience
+        self.best_average_precision = float("-inf")
+        self.stale_rounds = 0
+        self.early_stopped = False
         self.best_f1 = 0.0
         self.best_round = None
         self.best_weights = None
         self.best_threshold = 0.5
+        self.best_calibrated_threshold = 0.5
+        self.best_temperature = 1.0
+        self.best_validation_metrics = None
         self.final_test_metrics = None
+
+    def configure_fit(self, server_round, parameters, client_manager):
+        if self.early_stopped:
+            if server_round == self.best_round + self.patience + 1:
+                print(
+                    f"[EARLY STOP] No validation average-precision improvement "
+                    f"for {self.patience} rounds; retaining round {self.best_round}."
+                )
+            return []
+        return super().configure_fit(server_round, parameters, client_manager)
+
+    def _save_best_checkpoint(self):
+        if self.best_weights is None:
+            return
+        model = GraphAwareMLP(input_dim=32)
+        model.set_parameters(self.best_weights)
+        default_checkpoint = (
+            os.path.join(project_root, "fl_implementation", "model.pt")
+            if self.final_evaluate_fn
+            else os.path.join(self._schemas_dir(), "best_model.pt")
+        )
+        checkpoint_path = os.environ.get("VFI_MODEL_PATH") or default_checkpoint
+        os.makedirs(os.path.dirname(os.path.abspath(checkpoint_path)), exist_ok=True)
+        torch.save(model.state_dict(), checkpoint_path)
+
+    def _finalize(self, fit_summary):
+        self._save_best_checkpoint()
+        if self.final_test_metrics is not None or not self.final_evaluate_fn:
+            return
+        if self.best_weights is None or self.best_round is None:
+            raise RuntimeError("Cannot finalize: no validation-selected model checkpoint exists.")
+        _, self.final_test_metrics = self.final_evaluate_fn(
+            self.best_round,
+            self.best_weights,
+            {
+                "decision_threshold": self.best_threshold,
+                "calibrated_threshold": self.best_calibrated_threshold,
+                "temperature": self.best_temperature,
+            },
+        )
+        schemas_dir = self._schemas_dir()
+        os.makedirs(schemas_dir, exist_ok=True)
+        final_record = {
+            "run_id": _load_manifest().get("run_id"),
+            "selected_round": self.best_round,
+            "selection_metric": "validation_average_precision",
+            "best_validation_f1": float(self.best_f1),
+            "best_validation_average_precision": float(self.best_average_precision),
+            "validation_metrics": self.best_validation_metrics,
+            "decision_threshold": float(self.best_threshold),
+            "calibrated_threshold": float(self.best_calibrated_threshold),
+            "temperature": float(self.best_temperature),
+            "threshold_selection": "validation_smoothed_f1_3_point",
+            "client_fit_summary": fit_summary or {},
+            "evaluation": "final_test_once",
+            "metrics": self.final_test_metrics,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        with open(os.path.join(schemas_dir, "final_evaluation.json"), "w", encoding="utf-8") as f:
+            json.dump(final_record, f, indent=2)
 
     def _schemas_dir(self):
         return os.environ.get("VFI_SCHEMAS_DIR") or os.path.join(project_root, "schemas")
@@ -241,16 +351,30 @@ class EarlyStoppingFedAvg(fl.server.strategy.FedAvg):
             try:
                 validation_loss, validation_metrics = self.evaluate_fn(server_round, parameters_aggregated, {})
                 current_f1 = validation_metrics.get("f1", 0.0)
+                current_ap = validation_metrics.get("average_precision", 0.0)
                 current_threshold = validation_metrics.get("decision_threshold", 0.5)
-                print(f"[VALIDATION] Round {server_round}: F1={current_f1:.4f}, "
+                current_calibrated_threshold = validation_metrics.get(
+                    "calibrated_threshold", 0.5
+                )
+                print(f"[VALIDATION] Round {server_round}: AP={current_ap:.4f}, "
+                      f"F1={current_f1:.4f}, "
                       f"P={validation_metrics.get('precision', 0.0):.4f}, "
                       f"R={validation_metrics.get('recall', 0.0):.4f}, "
-                      f"threshold={current_threshold:.6f}")
-                if self.best_weights is None or current_f1 > self.best_f1 + self.min_delta:
+                      f"threshold={current_calibrated_threshold:.6f}, "
+                      f"T={validation_metrics.get('temperature', 1.0):.4g}")
+                if self.best_weights is None or current_ap > self.best_average_precision + self.min_delta:
+                    self.best_average_precision = float(current_ap)
                     self.best_f1 = current_f1
                     self.best_round = int(server_round)
                     self.best_threshold = float(current_threshold)
+                    self.best_calibrated_threshold = float(current_calibrated_threshold)
+                    self.best_temperature = float(validation_metrics.get("temperature", 1.0))
+                    self.best_validation_metrics = dict(validation_metrics)
                     self.best_weights = [np.array(arr, copy=True) for arr in ndarrays]
+                    self.stale_rounds = 0
+                    self._save_best_checkpoint()
+                else:
+                    self.stale_rounds += 1
             except Exception as exc:
                 print(f"[WARN] Validation evaluation failed: {exc}")
         metrics_dict = validation_metrics or (metrics_aggregated if metrics_aggregated is not None else {})
@@ -276,11 +400,19 @@ class EarlyStoppingFedAvg(fl.server.strategy.FedAvg):
                 "prevalence": metrics_dict.get("prevalence"),
                 "confusion_matrix": metrics_dict.get("confusion_matrix"),
                 "decision_threshold": metrics_dict.get("decision_threshold"),
-                "threshold_selection": "validation_max_f1",
+                "calibrated_threshold": metrics_dict.get("calibrated_threshold"),
+                "temperature": metrics_dict.get("temperature"),
+                "precision_at_least_0_70_threshold": metrics_dict.get(
+                    "precision_at_least_0_70_threshold"
+                ),
+                "threshold_selection": metrics_dict.get(
+                    "threshold_selection", "validation_smoothed_f1_3_point"
+                ),
             },
             "evaluation": metrics_dict.get("split", "validation"),
             "client_fit_summary": metrics_aggregated or {},
             "selected_by_validation": bool(server_round == self.best_round),
+            "selection_metric": "validation_average_precision",
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "client_count": getattr(self, "last_client_count", 4),
         }
@@ -294,37 +426,15 @@ class EarlyStoppingFedAvg(fl.server.strategy.FedAvg):
             json.dump(export_data, f, indent=2)
         print(f"[SAVE] Exported global model for round {server_round} to {export_path}")
 
-        # The final test is evaluated exactly once, on the best validation round.
-        if server_round >= self.target_rounds and self.best_weights is not None and self.final_evaluate_fn:
-            _, self.final_test_metrics = self.final_evaluate_fn(
-                self.best_round, self.best_weights,
-                {"decision_threshold": self.best_threshold},
-            )
-            final_record = {
-                "run_id": _load_manifest().get("run_id"),
-                "selected_round": self.best_round,
-                "selection_metric": "validation_f1",
-                "best_validation_f1": float(self.best_f1),
-                "decision_threshold": float(self.best_threshold),
-                "threshold_selection": "validation_max_f1",
-                "client_fit_summary": metrics_aggregated or {},
-                "evaluation": "final_test_once",
-                "metrics": self.final_test_metrics,
-                "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            }
-            with open(os.path.join(schemas_dir, "final_evaluation.json"), "w", encoding="utf-8") as f:
-                json.dump(final_record, f, indent=2)
-
-            final_model = GraphAwareMLP(input_dim=32)
-            final_model.set_parameters(self.best_weights)
-            checkpoint_path = os.environ.get("VFI_MODEL_PATH") or os.path.join(
-                project_root, "fl_implementation", "model.pt"
-            )
-            torch.save(final_model.state_dict(), checkpoint_path)
-            print(
-                f"[FINAL TEST] Selected validation round {self.best_round} with "
-                f"threshold={self.best_threshold:.6f}; metrics saved once."
-            )
+        should_stop = self.stale_rounds >= self.patience
+        if should_stop or server_round >= self.target_rounds:
+            self.early_stopped = should_stop
+            self._finalize(metrics_aggregated)
+            if self.final_test_metrics is not None:
+                print(
+                    f"[FINAL TEST] Selected validation round {self.best_round} "
+                    f"using AP={self.best_average_precision:.6f}; test metrics saved once."
+                )
 
         return parameters_aggregated, metrics_aggregated
 
@@ -411,7 +521,11 @@ if __name__ == "__main__":
     torch.manual_seed(SEED)
 
     parser = argparse.ArgumentParser(description="VFI Federated Learning Server")
-    parser.add_argument("--rounds", type=int, default=int(os.getenv("FL_ROUNDS", "10")), help="Number of FL rounds")
+    parser.add_argument("--rounds", type=int, default=int(os.getenv("FL_ROUNDS", "25")), help="Maximum number of FL rounds")
+    parser.add_argument(
+        "--patience", type=int, default=int(os.getenv("FL_PATIENCE", "5")),
+        help="Early-stopping patience on validation average precision",
+    )
     parser.add_argument("--min-clients", type=int, default=int(os.getenv("MIN_CLIENTS", "4")), help="Min clients required")
     parser.add_argument("--port", type=int, default=8080, help="FL server port")
     parser.add_argument(
@@ -428,8 +542,14 @@ if __name__ == "__main__":
             "Preprocessing artifacts are missing or stale. Run data/preprocess.py "
             "to create causal-v3 training, validation, and final-test splits first."
         )
-    validation_csv_path = os.path.join(project_root, "fl_implementation", "data", "global_validation.csv")
-    test_csv_path = os.path.join(project_root, "fl_implementation", "data", "global_test.csv")
+    validation_csv_path = os.environ.get(
+        "VFI_VALIDATION_CSV",
+        os.path.join(project_root, "fl_implementation", "data", "global_validation.csv"),
+    )
+    test_csv_path = os.environ.get(
+        "VFI_TEST_CSV",
+        os.path.join(project_root, "fl_implementation", "data", "global_test.csv"),
+    )
     validation_eval_fn = get_eval_fn(validation_csv_path, "validation")
     final_test_eval_fn = None if args.validation_only else get_eval_fn(test_csv_path, "final_test_once")
     if validation_eval_fn is None or (not args.validation_only and final_test_eval_fn is None):
@@ -438,6 +558,7 @@ if __name__ == "__main__":
     strategy = EarlyStoppingFedAvg(
         target_rounds=args.rounds,
         min_delta=0.0002,
+        patience=args.patience,
         evaluate_fn=validation_eval_fn,
         final_evaluate_fn=final_test_eval_fn,
         fraction_evaluate=0.0,

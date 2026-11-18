@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VFI Platform — Financial Institution Operational Portal</title>
-  <meta name="description" content="Verifiable Federated Intelligence enterprise portal for institutional federated learning, privacy metrics, and cryptographic auditability.">
+  <title>VFI Prototype — Simulated Client Dashboard</title>
+  <meta name="description" content="Local Verifiable Federated Intelligence proof-of-concept dashboard for simulated clients and audit demonstrations.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -24,9 +24,9 @@
 
         <!-- Role Workspace Switcher -->
         <div class="role-switcher-card">
-          <a href="index.html" class="role-btn active" title="Financial Institution View">
+          <a href="index.html" class="role-btn active" title="Simulated Client View">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
-            Institution
+            Simulated Client
           </a>
           <a href="regulator.html" class="role-btn" title="Regulatory Oversight View">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -59,7 +59,7 @@
         <a class="nav-item" data-section="security-monitoring">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           Security & Byzantine
-          <span class="nav-badge" style="background: var(--status-success-bg); color: var(--status-success);">Active</span>
+          <span class="nav-badge" style="background: var(--status-warning-bg); color: var(--status-warning);">Demo</span>
         </a>
         <a class="nav-item" data-section="verification-records">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -77,8 +77,8 @@
         <div class="user-profile">
           <div class="user-avatar">BA</div>
           <div class="user-info">
-            <span class="user-name">First National Bank</span>
-            <span class="user-role">Consortium Node 1</span>
+            <span class="user-name">Simulated Client A</span>
+            <span class="user-role">Local prototype</span>
           </div>
         </div>
       </div>
@@ -118,7 +118,7 @@
           <div class="view-header">
             <div class="view-heading">
               <h1>Operational Overview</h1>
-              <p>Real-time status of consortium federated training, model metrics, and zero-knowledge verification.</p>
+              <p>Local prototype status for simulated federated training, model metrics, and zero-knowledge verification.</p>
             </div>
             <div class="view-controls">
               <span class="badge badge-forest">Consortium Tier 1</span>
@@ -133,34 +133,34 @@
                 <span class="metric-label">Latest FL Round</span>
                 <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
               </div>
-              <div class="metric-value" id="kpi-round">Round 10</div>
+              <div class="metric-value" id="kpi-round">Saved rounds</div>
               <div class="metric-footer">
                 <span class="metric-tag positive">Synchronized</span>
-                <span>• 4 Bank Nodes</span>
+                <span>• 4 Simulated Clients</span>
               </div>
             </div>
 
             <div class="metric-card">
               <div class="metric-header">
-                <span class="metric-label">Global F1 Score</span>
+                <span class="metric-label">Saved Baseline Validation F1</span>
                 <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               </div>
               <div class="metric-value" id="kpi-f1">—</div>
               <div class="metric-footer">
                 <span class="metric-tag positive" id="kpi-recall">— Recall</span>
-                <span>From live holdout</span>
+                <span>Saved validation metrics</span>
               </div>
             </div>
 
             <div class="metric-card">
               <div class="metric-header">
-                <span class="metric-label">Differential Privacy (ε)</span>
+                <span class="metric-label">Formal-DP Candidate (ε)</span>
                 <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               </div>
-              <div class="metric-value">3.84</div>
+              <div class="metric-value">7.752</div>
               <div class="metric-footer">
-                <span class="metric-tag positive">Strict Bound</span>
-                <span>• δ = 10⁻⁵ (C=1.0, σ=0.5)</span>
+                <span class="metric-tag positive">Reported ε</span>
+                <span>• δ = 10⁻⁵; demo-only RNG</span>
               </div>
             </div>
 
@@ -203,18 +203,18 @@
                 <div>
                   <label class="metric-label" style="display: block; margin-bottom: 6px;">Consortium Execution Telemetry</label>
                   <div id="console-logs" class="terminal-window">
-                    <div class="terminal-line info">[SYSTEM] Engine standing by. Metrics load from the latest leak-free holdout evaluation.</div>
+                    <div class="terminal-line info">[SYSTEM] Demo engine standing by. Validation and final-test records are labeled separately.</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Institution Data Silos Summary -->
+            <!-- Simulated Client Shard Summary -->
             <div class="card">
               <div class="card-header">
                 <div>
                   <h3 class="card-title">Partition Health</h3>
-                  <p class="card-subtitle">Local Banking Data Silos</p>
+                  <p class="card-subtitle">Simulated Training Shards</p>
                 </div>
                 <span class="badge badge-success">4/4 Online</span>
               </div>
@@ -306,7 +306,7 @@
           <div class="view-header">
             <div class="view-heading">
               <h1>Federated Learning Operations</h1>
-              <p>Decentralized model training across banking participants with client-side DP-SGD and Flower aggregation.</p>
+              <p>Flower model training across randomized client shards with client-side DP-SGD; preprocessing is centralized.</p>
             </div>
             <div class="view-controls">
               <button class="btn btn-secondary" onclick="loadRoundsData()">
@@ -317,7 +317,7 @@
           </div>
 
           <div class="info-note">
-            <strong>Architecture Specification:</strong> Each participant executes 1 local epoch on PyTorch <code>GraphAwareMLP</code> with gradient norm clipping ($C=1.0$) and calibrated Gaussian noise injection ($\sigma=0.5$). Raw transaction records remain isolated inside local bank data silos.
+            <strong>Prototype scope:</strong> Four simulated clients train a PyTorch MLP using centrally preprocessed training shards. The scaler/PCA basis is fit on pooled training rows; institution-local data residency is not demonstrated.
           </div>
 
           <div class="card">
@@ -336,7 +336,7 @@
                     <th>Precision</th>
                     <th>Recall</th>
                     <th>F1 Score</th>
-                    <th>Contributing Silos</th>
+                    <th>Simulated Clients</th>
                     <th>Timestamp</th>
                     <th>Status</th>
                   </tr>
@@ -367,13 +367,13 @@
               <div class="card-header">
                 <div>
                   <h3 class="card-title">Centralized vs Federated AML Benchmark</h3>
-                  <p class="card-subtitle">Holdout test set convergence comparison over 10 training epochs</p>
+                  <p class="card-subtitle">Saved centralized and federated benchmark history; runs may use different configurations</p>
                 </div>
               </div>
               <div class="card-body">
                 <img src="/visualizations/baseline_vs_federated.png" style="width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--color-border);" alt="Benchmark Convergence Chart">
                 <div style="margin-top: 14px; font-size: 12px; color: var(--color-charcoal-subtle);">
-                  • <strong>Finding:</strong> the old <strong>99.67% F1</strong> claim was invalidated by target leakage. Live values now come from the untouched holdout; the completed full-corpus rerun reached <strong>F1 0.6169</strong> (see <code>docs/RERUN_RESULTS.md</code>).
+                  • <strong>Finding:</strong> the old <strong>99.67% F1</strong> claim was invalidated by leakage. The current validation winner (SMOTE-Tomek, round 8) reached F1 0.751131 / AP 0.801182, but its one-time test attempt is invalid due to a checkpoint/threshold mismatch. The valid BCE <code>pos_weight=25</code> final-test F1 is 0.679137; this test period is development evidence (see <code>docs/CURRENT_PIPELINE_RESULTS.md</code>).
                 </div>
               </div>
             </div>
@@ -382,10 +382,10 @@
             <div class="card">
               <div class="card-header">
                 <div>
-                  <h3 class="card-title">Holdout Test Set Classification Metrics</h3>
-                  <p class="card-subtitle">Metrics come from the selected model's one-time final test evaluation. Its decision threshold was selected on validation data.</p>
+                  <h3 class="card-title">Final-Test Metrics (Development Period)</h3>
+                  <p class="card-subtitle">The displayed valid record is BCE with <code>pos_weight=25</code>; its operating threshold was selected on validation data.</p>
                 </div>
-                <span class="badge badge-success">Leak-free holdout</span>
+                <span class="badge badge-neutral">Consulted development period</span>
               </div>
               <div class="card-body" style="display: flex; flex-direction: column; gap: 16px;">
                 
@@ -393,13 +393,13 @@
                   <div style="background: var(--color-ivory-warm); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
                     <div class="metric-label">True Positive Rate (Recall)</div>
                     <div id="holdout-recall" style="font-size: 22px; font-weight: 700; color: var(--status-success); margin: 4px 0;">—</div>
-                    <div style="font-size: 11px; color: var(--color-charcoal-subtle);">Loaded from holdout JSON</div>
+                    <div style="font-size: 11px; color: var(--color-charcoal-subtle);">Loaded from current evaluation record</div>
                   </div>
 
                   <div style="background: var(--color-ivory-warm); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);">
                     <div class="metric-label">Precision Rate</div>
                     <div id="holdout-precision" style="font-size: 22px; font-weight: 700; color: var(--color-forest); margin: 4px 0;">—</div>
-                    <div style="font-size: 11px; color: var(--color-charcoal-subtle);">Loaded from holdout JSON</div>
+                    <div style="font-size: 11px; color: var(--color-charcoal-subtle);">Loaded from current evaluation record</div>
                   </div>
                 </div>
 
@@ -484,10 +484,10 @@
           <div class="view-header">
             <div class="view-heading">
               <h1>Privacy & Regulatory Compliance</h1>
-              <p>Rigorous formal privacy accounting, gradient clipping specifications, and cross-border regulatory conformance.</p>
+              <p>Recorded prototype privacy settings and limitations; no regulatory compliance assessment is provided.</p>
             </div>
             <div class="view-controls">
-              <span class="badge badge-success">GDPR Art. 25 & 32 Compliant</span>
+              <span class="badge badge-neutral">No regulatory assessment</span>
             </div>
           </div>
 
@@ -501,12 +501,12 @@
                 <div class="partition-specs" style="grid-template-columns: 1fr; gap: 12px;">
                   <div>Clipping Threshold (C): <strong>1.0 (Gradient Norm Clamped)</strong></div>
                   <div>Noise Multiplier (σ): <strong>0.5 (Calibrated Gaussian Distribution)</strong></div>
-                  <div>Cumulative Privacy Budget: <strong>ε = 3.84, δ = 10⁻⁵</strong></div>
-                  <div>Subsampling Ratio (q): <strong>64 / 180,272 per batch</strong></div>
-                  <div>Privacy Accounting: <strong>Moments Accountant Bound</strong></div>
+                  <div>Reported privacy budget: <strong>ε = 7.75214, δ = 10⁻⁵</strong></div>
+                  <div>Privacy accounting: <strong>Opacus RDP accountant</strong></div>
+                  <div>Randomness: <strong>standard_prng_demo_only</strong></div>
                 </div>
                 <div style="font-size: 12px; color: var(--color-charcoal-subtle); line-height: 1.5;">
-                  The DP mechanism mathematically ensures that an adversary inspecting global weights cannot reconstruct any individual transaction or verify membership in a specific bank partition.
+                  This is a demo configuration, not a production-secure randomness claim or regulatory certification. Privacy guarantees depend on the recorded accounting assumptions; do not infer absolute resistance to reconstruction or membership attacks.
                 </div>
               </div>
             </div>
@@ -518,21 +518,21 @@
               <div class="card-body">
                 <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 12.5px;">
                   <li style="display: flex; gap: 10px;">
-                    <span class="badge badge-success" style="height: fit-content;">PASS</span>
+                    <span class="badge badge-neutral" style="height: fit-content;">SCOPE</span>
                     <div>
-                      <strong>Data Residency Guarantee:</strong> All customer bank transaction records, account numbers, and PII remain exclusively inside bank on-premises storage.
+                      <strong>Data locality:</strong> Preprocessing is centralized and the four clients are randomized shards; this prototype does not demonstrate institution-local data residency.
                     </div>
                   </li>
                   <li style="display: flex; gap: 10px;">
-                    <span class="badge badge-success" style="height: fit-content;">PASS</span>
+                    <span class="badge badge-neutral" style="height: fit-content;">SCOPE</span>
                     <div>
-                      <strong>Leakage-Free Resampling:</strong> SMOTE minority oversampling is applied strictly to training partitions; holdout evaluation sets are completely free of synthetic artifacts.
+                      <strong>Resampling:</strong> The canonical manifest uses none. Optional SMOTE-Tomek runs are client-training-only; their reported epsilon is nominal, not formal DP for original records.
                     </div>
                   </li>
                   <li style="display: flex; gap: 10px;">
-                    <span class="badge badge-success" style="height: fit-content;">PASS</span>
+                    <span class="badge badge-neutral" style="height: fit-content;">LIMITED</span>
                     <div>
-                      <strong>Cryptographic Auditing:</strong> Model parameter updates are cryptographically bound via Poseidon hash commitments and logged to an immutable smart contract ledger.
+                      <strong>Cryptographic auditing:</strong> The Groth16 circuit checks a weighted relation and Poseidon commitment for 33 quantized output-layer values; it does not prove training correctness or model accuracy.
                     </div>
                   </li>
                 </ul>
@@ -547,26 +547,26 @@
         <section id="section-security-monitoring" class="view-section" style="display: none;">
           <div class="view-header">
             <div class="view-heading">
-              <h1>Security & Byzantine Fault Monitoring</h1>
-              <p>Automated anomaly filtering protecting the global model against weight poisoning and compromised participants.</p>
+              <h1>Security Monitoring (Demo)</h1>
+              <p>Byzantine fault detection and adversarial update filtering are not implemented in the current training pipeline.</p>
             </div>
           </div>
 
           <div class="grid-3" style="margin-bottom: 20px;">
             <div class="metric-card">
               <div class="metric-label">Byzantine Defense Rule</div>
-              <div style="font-size: 16px; font-weight: 700; color: var(--color-forest); margin-top: 4px;">L2-Norm Upper Bound</div>
-              <div class="metric-footer">Threshold: 150.0 (Normal: &lt; 25.0)</div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--color-forest); margin-top: 4px;">Not Implemented</div>
+              <div class="metric-footer">No Byzantine robustness claim</div>
             </div>
             <div class="metric-card">
               <div class="metric-label">Quorum Requirement</div>
-              <div style="font-size: 16px; font-weight: 700; color: var(--status-success); margin-top: 4px;">4 / 4 Nodes Required</div>
-              <div class="metric-footer">Strict fault tolerance enforced</div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--status-success); margin-top: 4px;">4 Simulated Clients</div>
+              <div class="metric-footer">Flower client configuration only</div>
             </div>
             <div class="metric-card">
               <div class="metric-label">Numerical Integrity Check</div>
-              <div style="font-size: 16px; font-weight: 700; color: var(--status-success); margin-top: 4px;">NaN / Inf Trap Active</div>
-              <div class="metric-footer">Pre-aggregation parameter filter</div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--status-success); margin-top: 4px;">No Dedicated Defense</div>
+              <div class="metric-footer">Standard pipeline checks only</div>
             </div>
           </div>
 
@@ -643,12 +643,12 @@
         <section id="section-institution-settings" class="view-section" style="display: none;">
           <div class="view-header">
             <div class="view-heading">
-              <h1>Institution Profile & Node Settings</h1>
-              <p>Hardware connectivity, RPC configurations, and consortium credentials.</p>
+              <h1>Simulated Client & Local Settings</h1>
+              <p>Prototype Flower and local Hardhat configuration; no consortium credentials are implemented.</p>
             </div>
             <div class="view-controls">
-              <span class="badge badge-success">Cryptographically Bound</span>
-              <span class="badge badge-forest">Consortium Tier 1</span>
+              <span class="badge badge-neutral">Demo Configuration</span>
+              <span class="badge badge-forest">Local Prototype</span>
             </div>
           </div>
 
@@ -657,22 +657,22 @@
             <div class="card">
               <div class="card-header">
                 <h3 class="card-title">Node Identity & Key Governance</h3>
-                <span class="badge badge-neutral">Silo 1</span>
+                <span class="badge badge-neutral">Simulated Client 1</span>
               </div>
               <div class="card-body" style="display: flex; flex-direction: column; gap: 10px;">
                 <div class="config-item">
                   <div class="config-label-group">
-                    <span class="config-title">Participant Institution</span>
-                    <span class="config-desc">Designated Tier-1 Banking Consortium Member</span>
+                    <span class="config-title">Client Label</span>
+                    <span class="config-desc">Illustrative simulated shard</span>
                   </div>
-                  <span class="config-value">First National Bank</span>
+                  <span class="config-value">Simulated Client A</span>
                 </div>
                 <div class="config-item">
                   <div class="config-label-group">
                     <span class="config-title">Local Node Identifier</span>
                     <span class="config-desc">Flower gRPC Client Identification Tag</span>
                   </div>
-                  <span class="config-value">bank_silo_1</span>
+                  <span class="config-value">client_1</span>
                 </div>
                 <div class="config-item">
                   <div class="config-label-group">
@@ -695,7 +695,7 @@
             <div class="card">
               <div class="card-header">
                 <h3 class="card-title">Consortium Network & Defense Rules</h3>
-                <span class="badge badge-success">Strict Active</span>
+                <span class="badge badge-neutral">Prototype</span>
               </div>
               <div class="card-body" style="display: flex; flex-direction: column; gap: 10px;">
                 <div class="config-item">
@@ -714,17 +714,17 @@
                 </div>
                 <div class="config-item">
                   <div class="config-label-group">
-                    <span class="config-title">Byzantine L2 Norm Filter</span>
-                    <span class="config-desc">Max tolerable gradient norm prior to drop</span>
+                    <span class="config-title">Byzantine Filter</span>
+                    <span class="config-desc">Not implemented in the current pipeline</span>
                   </div>
-                  <span class="config-value">&lt; 150.0 Norm</span>
+                  <span class="config-value">Not configured</span>
                 </div>
                 <div class="config-item">
                   <div class="config-label-group">
                     <span class="config-title">Differential Privacy ε</span>
-                    <span class="config-desc">Strict Renyi Moments Accountant Bound</span>
+                    <span class="config-desc">Opacus RDP accounting; demo-only RNG</span>
                   </div>
-                  <span class="config-value">ε = 3.84, δ = 10⁻⁵</span>
+                  <span class="config-value">ε = 7.75214, δ = 10⁻⁵</span>
                 </div>
               </div>
             </div>
@@ -734,10 +734,10 @@
           <div class="card" style="margin-top: 20px;">
             <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
               <div>
-                <h4 style="font-size: 13.5px; font-weight: 700; color: var(--color-charcoal); margin-bottom: 4px;">Institutional Compliance Lock Active</h4>
-                <p style="font-size: 12px; color: var(--color-charcoal-subtle);">Parameters are cryptographically locked across all 4 participant banks by multi-institution consortium policy. Altering clipping thresholds or RPC endpoints requires multi-signature re-attestation.</p>
+                <h4 style="font-size: 13.5px; font-weight: 700; color: var(--color-charcoal); margin-bottom: 4px;">Prototype Configuration</h4>
+                <p style="font-size: 12px; color: var(--color-charcoal-subtle);">No institutional governance, multi-signature configuration lock, or production compliance assessment is implemented.</p>
               </div>
-              <span class="badge badge-forest" style="padding: 6px 12px; font-size: 12px;">Policy Confirmed</span>
+              <span class="badge badge-neutral" style="padding: 6px 12px; font-size: 12px;">Prototype</span>
             </div>
           </div>
         </section>

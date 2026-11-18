@@ -132,6 +132,18 @@ async function runTests() {
       assert(res400.data.error.includes("Invalid round ID"));
     });
 
+    // Test 2c: GET /api/final-evaluation returns the latest valid, current-run record.
+    await test("GET /api/final-evaluation excludes invalid attempts and returns separated final metrics", async () => {
+      const res = await request("GET", "/api/final-evaluation");
+      assert.strictEqual(res.statusCode, 200);
+      assert.strictEqual(res.data.evaluation, "final_test_once");
+      assert.strictEqual(res.data.hyperparameters.data_run_id, "abc4b575614845cdb99a25f3f91aa979");
+      assert.strictEqual(res.data.hyperparameters.pos_weight, 25);
+      assert.strictEqual(res.data.metrics.f1, 0.679136690647482);
+      assert.strictEqual(res.data.metrics.average_precision, 0.7274062049172819);
+      assert.strictEqual(res.data.metrics.decision_threshold, 0.0025234758184371595);
+    });
+
     // Test 3: GET /api/baseline
     await test("GET /api/baseline returns centralized vs federated evaluation data", async () => {
       const res = await request("GET", "/api/baseline");

@@ -1,64 +1,49 @@
 # VFI Proof-of-Concept Runbook
 
-This guide runs the local prototype. It is not a production deployment guide. Four Flower clients are simulated by splitting centrally preprocessed pooled training rows.
+This runbook describes the local prototype. Four Flower clients are randomized shards of centrally preprocessed training rows, not independent banks.
 
-## Environment
+## Environment and preprocessing
 
-Install dependencies using `requirements.txt`, the root `package.json`, and `blockchain/package.json` for the relevant components. Confirm Python, Node, Circom, and SnarkJS versions before recording a run.
+Install dependencies from `requirements.txt` and root `package.json`; install `blockchain` dependencies for contract tests. Then run:
 
-## 1. Prepare data
-
-```bash
-python data/preprocess.py
+```powershell
+python data\preprocess.py
 ```
 
-The script uses the configured CSV and writes the train, validation, test, feature-transform, and client-shard artifacts. It chronologically splits before causal feature extraction and fits numeric transforms on the training split. The current manifest records no resampling. The four client shards are generated from pooled preprocessed training rows. Inspect `data/preprocess_manifest.json`; record the source file checksum, seed, manifest, and a copy of all generated outputs. The downloader can fall back to mock data, so confirm the dataset source.
+The preprocessing step generates a chronological split before causal-history features, fits scaler/PCA transforms on pooled training rows only, and writes four client shards from a shared feature basis. The manifest's canonical setting is `resampling: none`. The downloader can fall back to mock data; verify the source and preserve an input checksum before reporting results.
 
-## 2. Run federated learning
+## Leakage-safe diagnostics and validation
 
-Start the server:
+Run the training/validation-only audit:
 
-```bash
-python fl_implementation/server.py --rounds 10 --min-clients 4
+```powershell
+python evaluation\diagnose_pipeline.py
 ```
 
-Start one client process per terminal:
+The four-run ablation commands and their exact flags are maintained in [`COMMANDS.md`](../COMMANDS.md). Use `--skip-finalize` for all tuning and validation sweeps. The pooled scaler/PCA is a shared train-only feature projection for simulated horizontal FL, not institution-local preprocessing.
 
-```bash
-python fl_implementation/client.py --cid 1
-python fl_implementation/client.py --cid 2
-python fl_implementation/client.py --cid 3
-python fl_implementation/client.py --cid 4
-```
+## Final evaluation protocol
 
-Round artifacts contain validation results. The server's final evaluation record is written separately. For the saved current artifacts, round 10 validation F1 is 71.22%; the current final-test record is 67.88%. Consult `CURRENT_PIPELINE_RESULTS.md`; do not call a validation result final-test performance.
+The approved BCE `pos_weight=25` candidate has one valid final-test result in `evaluation/finalized_candidates/bce_pos_weight_25_seed42/`. The approved SMOTE-Tomek attempt used round-8 weights with round-9 thresholds and is invalid. The test data were accessed once for that candidate, so do not rerun it. Test results are never used to change calibration, thresholds, or hyperparameters. See `docs/CURRENT_PIPELINE_RESULTS.md` for exact status and metrics.
 
-## 3. Run the centralized reference
+For a future, newly approved candidate, the one-shot finalizer requires its validation sweep, loss, weighting/resampling config, and a fresh output directory under `evaluation/`. It validates the server-selected checkpoint and validation artifacts before loading the test CSV. Never change those artifacts after validation or reuse an output directory.
 
-```bash
-python evaluation/compare_baseline.py --epochs 10
-```
+## ZK proof and local ledger
 
-The centralized model is trained on pooled data, with epoch and threshold chosen using validation. Its saved test result is a reference without federation or DP. Preserve the resulting `evaluation/comparison_results.json` and exact configuration.
+The Circom circuit accepts four client vectors of 33 quantized values and proves the sample-count-weighted aggregation relation plus Poseidon commitment. The proof does not establish full-model correctness, training correctness, data integrity, model accuracy, or metric truthfulness. See `zkp/circuit/README.md` and `COMMANDS.md` for proof commands and artifact paths.
 
-## 4. Local proof and ledger demonstration
+## Dashboard and verification
 
-Start a local EVM node, deploy the contracts, generate/verify the proof, and submit the round using the scripts in `blockchain/`. The proof covers the specified aggregation arithmetic and commitment for the selected output-layer parameters. It does not prove training correctness or predictive performance. Confirm `aml_verify.circom` and `AMLVerifier.sol` before describing this evidence.
-
-## 5. Dashboard and tests
-
-```bash
+```powershell
 npm run dashboard
 npm test
 ```
 
-The dashboard is for local demonstration. The checked-in test report contains historical counts and older implementation details; it is not evidence that tests were freshly run on the current tree. Run the tests and record command output before claiming current pass status.
+`npm test` runs pytest, Hardhat tests, and backend API tests. Groth16 proof generation/verification is a separate suite/command. Record fresh command output in `docs/TEST_RESULTS.md`; do not treat historical test counts as current.
 
-## Result records
+## Canonical artifacts
 
-- `data/preprocess_manifest.json` — data split and preprocessing metadata.
-- `schemas/global_model_round_N.json` — per-round aggregated model and validation results.
-- `schemas/final_evaluation.json` — selected checkpoint's final-test result.
-- `evaluation/comparison_results.json` — centralized baseline and federated validation history.
-- `evaluation/fl_validation_sweep_*.json` — candidate sweep details; check `final_test_once` before quoting any score.
-
+- `data/preprocess_manifest.json` — split and transformation metadata.
+- `evaluation/ablation_results.json` and `evaluation/ablation_summary.md` — separated validation/final-test run records.
+- `evaluation/finalized_candidates/` — archived candidate checkpoint, selected-round update, and final-evaluation audit JSON.
+- `docs/CURRENT_PIPELINE_RESULTS.md` — authoritative status and metric interpretation.

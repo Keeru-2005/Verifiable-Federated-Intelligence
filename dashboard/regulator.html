@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VFI Platform — Regulatory Compliance & Oversight Portal</title>
-  <meta name="description" content="Independent regulatory verification interface for zero-knowledge cryptographic proofs, consortium auditing, and immutable smart contract ledgers.">
+  <meta name="description" content="Local demonstration view for VFI proof-of-concept artifacts; not an independent regulatory verification service.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,15 +18,15 @@
           <div class="brand-mark" style="background-color: var(--color-charcoal-muted);">REG</div>
           <div class="brand-details">
             <span class="brand-title">Financial Oversight</span>
-            <span class="brand-tagline">Regulatory Authority</span>
+            <span class="brand-tagline">Demo Observer</span>
           </div>
         </div>
 
         <!-- Role Workspace Switcher -->
         <div class="role-switcher-card">
-          <a href="index.html" class="role-btn" title="Financial Institution View">
+          <a href="index.html" class="role-btn" title="Simulated Client View">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
-            Institution
+            Simulated Client
           </a>
           <a href="regulator.html" class="role-btn active" title="Regulatory Oversight View">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -72,7 +72,7 @@
         </a>
         <a class="nav-item" data-reg-section="settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Authority Settings
+          Demo Settings
         </a>
       </nav>
 
@@ -121,7 +121,7 @@
           <div class="view-header">
             <div class="view-heading">
               <h1>Regulatory Compliance & Verification Overview</h1>
-              <p>Independent supervisory view over consortium federated AML model training, zero-knowledge proofs, and ledger auditability.</p>
+              <p>Illustrative view of local VFI artifacts. It does not provide independent supervision, certification, or compliance assessment.</p>
             </div>
             <div class="view-controls">
               <span class="badge badge-forest">Audit Status: Synchronized</span>
@@ -132,25 +132,25 @@
           <div class="metrics-row">
             <div class="metric-card">
               <div class="metric-header">
-                <span class="metric-label">Supervised Institutions</span>
+                <span class="metric-label">Simulated Clients</span>
                 <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
               </div>
-              <div class="metric-value">4 Banks</div>
+              <div class="metric-value">4 Clients</div>
               <div class="metric-footer">
-                <span class="metric-tag positive">100% Compliant</span>
-                <span>• Strict 4/4 Quorum</span>
+                <span class="metric-tag positive">Prototype</span>
+                <span>• Randomized training shards</span>
               </div>
             </div>
 
             <div class="metric-card">
               <div class="metric-header">
-                <span class="metric-label">Verified Rounds Count</span>
+                <span class="metric-label">Saved Round Artifacts</span>
                 <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
               </div>
-              <div class="metric-value" id="reg-kpi-verified-rounds">10</div>
+              <div class="metric-value" id="reg-kpi-verified-rounds">—</div>
               <div class="metric-footer">
-                <span class="metric-tag positive">Consecutive</span>
-                <span>• 0 Broken Proofs</span>
+                <span class="metric-tag positive">Historical</span>
+                <span>• Not all rounds have proofs</span>
               </div>
             </div>
 
@@ -183,12 +183,12 @@
           <div class="card">
             <div class="card-header">
               <h3 class="card-title">Registry Architecture & Smart Contract Identity</h3>
-              <span class="badge badge-forest">Polygon Amoy Compatible</span>
+              <span class="badge badge-forest">Local Demo</span>
             </div>
             <div class="card-body">
               <div class="grid-3" style="font-size: 12.5px;">
                 <div>
-                  <div class="metric-label">Deployed Contract Address</div>
+                  <div class="metric-label">Example Local Contract Address</div>
                   <div class="mono" id="contract-address" style="font-size: 12px; margin-top: 4px; color: var(--color-forest); font-weight: 600;">0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512</div>
                 </div>
                 <div>
@@ -197,7 +197,7 @@
                 </div>
                 <div>
                   <div class="metric-label">Verified Epochs Logged On-Chain</div>
-                  <div style="font-size: 18px; font-weight: 700; color: var(--status-success); margin-top: 2px;" id="contract-epochs-count">10</div>
+                  <div style="font-size: 18px; font-weight: 700; color: var(--status-success); margin-top: 2px;" id="contract-epochs-count">—</div>
                 </div>
               </div>
             </div>
@@ -208,7 +208,7 @@
             <div class="card-header">
               <div>
                 <h3 class="card-title">Immutable Verification Ledger</h3>
-                <p class="card-subtitle">Cryptographic records pulled directly from on-chain state and verified schemas</p>
+                <p class="card-subtitle">Local ledger records when a local deployment is configured; not production attestations</p>
               </div>
               <button class="btn btn-secondary btn-sm" onclick="switchRegSection('blockchain-records')">View All Ledger Logs</button>
             </div>
@@ -242,8 +242,8 @@
         <section id="reg-section-directory" class="reg-view-section" style="display: none;">
           <div class="view-header">
             <div class="view-heading">
-              <h1>Participating Institution Directory</h1>
-              <p>Registered financial organizations participating in decentralized model training under regulatory oversight.</p>
+              <h1>Simulated Client Directory</h1>
+              <p>Illustrative client shards from centrally preprocessed training rows; no financial institutions participate in this prototype.</p>
             </div>
           </div>
 
@@ -252,51 +252,51 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Institution Name</th>
-                    <th>Node ID</th>
+                    <th>Client</th>
+                    <th>Client ID</th>
                     <th>Jurisdiction</th>
-                    <th>Local Partition Volume</th>
+                    <th>Training Examples</th>
                     <th>DP Norm Bound</th>
-                    <th>Consortium Status</th>
-                    <th>Last Active Round</th>
+                    <th>Prototype Status</th>
+                    <th>Selected Validation Round</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td><strong>First National Bank</strong></td>
-                    <td class="mono">Bank_Node_1</td>
-                    <td>US-East</td>
-                    <td>180,272 Records</td>
+                    <td><strong>Simulated Client A</strong></td>
+                    <td class="mono">client_1</td>
+                    <td>N/A</td>
+                    <td>159,988</td>
                     <td>C = 1.0 (σ = 0.5)</td>
-                    <td><span class="badge badge-success">Active & Compliant</span></td>
-                    <td>Round 10</td>
+                    <td><span class="badge badge-neutral">Simulated shard</span></td>
+                    <td>Round 8 (validation winner)</td>
                   </tr>
                   <tr>
-                    <td><strong>Charter Trust</strong></td>
-                    <td class="mono">Bank_Node_2</td>
-                    <td>US-East</td>
-                    <td>180,272 Records</td>
+                    <td><strong>Simulated Client B</strong></td>
+                    <td class="mono">client_2</td>
+                    <td>N/A</td>
+                    <td>160,007</td>
                     <td>C = 1.0 (σ = 0.5)</td>
-                    <td><span class="badge badge-success">Active & Compliant</span></td>
-                    <td>Round 10</td>
+                    <td><span class="badge badge-neutral">Simulated shard</span></td>
+                    <td>Round 8 (validation winner)</td>
                   </tr>
                   <tr>
-                    <td><strong>Merchants Bancorp</strong></td>
-                    <td class="mono">Bank_Node_3</td>
-                    <td>US-Central</td>
-                    <td>180,271 Records</td>
+                    <td><strong>Simulated Client C</strong></td>
+                    <td class="mono">client_3</td>
+                    <td>N/A</td>
+                    <td>160,004</td>
                     <td>C = 1.0 (σ = 0.5)</td>
-                    <td><span class="badge badge-success">Active & Compliant</span></td>
-                    <td>Round 10</td>
+                    <td><span class="badge badge-neutral">Simulated shard</span></td>
+                    <td>Round 8 (validation winner)</td>
                   </tr>
                   <tr>
-                    <td><strong>Apex Financial Services</strong></td>
-                    <td class="mono">Bank_Node_4</td>
-                    <td>US-West</td>
-                    <td>180,271 Records</td>
+                    <td><strong>Simulated Client D</strong></td>
+                    <td class="mono">client_4</td>
+                    <td>N/A</td>
+                    <td>159,990</td>
                     <td>C = 1.0 (σ = 0.5)</td>
-                    <td><span class="badge badge-success">Active & Compliant</span></td>
-                    <td>Round 10</td>
+                    <td><span class="badge badge-neutral">Simulated shard</span></td>
+                    <td>Round 8 (validation winner)</td>
                   </tr>
                 </tbody>
               </table>
@@ -502,7 +502,7 @@
           <div class="view-header">
             <div class="view-heading">
               <h1>System Audit Trail</h1>
-              <p>Filterable chronological event log of consortium submissions, verifications, and compliance milestones.</p>
+              <p>Filterable event log for the local demo; records are not supervisory findings or compliance milestones.</p>
             </div>
           </div>
 
@@ -532,13 +532,13 @@
         <section id="reg-section-reports" class="reg-view-section" style="display: none;">
           <div class="view-header">
             <div class="view-heading">
-              <h1>Examiner Reports & Governance</h1>
-              <p>Official supervisory attestations and cryptographic compliance certifications.</p>
+              <h1>Demo Reports & Governance</h1>
+              <p>This prototype does not issue supervisory attestations or certify regulatory compliance.</p>
             </div>
             <div class="view-controls">
               <button class="btn btn-primary" id="btn-export-csv" onclick="exportAuditLedgerCSV()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Export Audit Certification (CSV)
+                Export Demo Ledger (CSV)
               </button>
             </div>
           </div>
@@ -546,10 +546,10 @@
           <div class="card">
             <div class="card-header">
               <div>
-                <h3 class="card-title">Consortium Compliance Certification Matrix</h3>
-                <p class="card-subtitle">Formal supervisory attestations for AML model convergence and privacy preservation</p>
+                <h3 class="card-title">Illustrative Audit Records</h3>
+                <p class="card-subtitle">Static example rows are not current metrics, formal attestations, or production approvals.</p>
               </div>
-              <span class="badge badge-success">Audit Complete (10 Rounds)</span>
+              <span class="badge badge-neutral">Demo Fixtures</span>
             </div>
             <div class="card-body">
               <div class="table-container">
@@ -567,49 +567,9 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <td class="mono"><strong>Round 10</strong></td>
-                      <td class="mono">0x0d693f6d0a1ed073...</td>
-                      <td><span class="badge badge-forest">—</span></td>
-                      <td>ε = 3.84</td>
-                      <td><span class="badge badge-success">Groth16 Valid</span></td>
-                      <td><span class="badge badge-success">Certified</span></td>
-                      <td style="color: var(--color-charcoal-subtle);">Production Approved</td>
-                    </tr>
-                    <tr>
-                      <td class="mono"><strong>Round 9</strong></td>
-                      <td class="mono">0x116dbf74167900ce...</td>
-                      <td><span class="badge badge-neutral">27.59%</span></td>
-                      <td>ε = 3.45</td>
-                      <td><span class="badge badge-success">Groth16 Valid</span></td>
-                      <td><span class="badge badge-success">Certified</span></td>
-                      <td style="color: var(--color-charcoal-subtle);">Training Logged</td>
-                    </tr>
-                    <tr>
-                      <td class="mono"><strong>Round 8</strong></td>
-                      <td class="mono">0x2adcbceb4c6a9973...</td>
-                      <td><span class="badge badge-neutral">27.59%</span></td>
-                      <td>ε = 3.07</td>
-                      <td><span class="badge badge-success">Groth16 Valid</span></td>
-                      <td><span class="badge badge-success">Certified</span></td>
-                      <td style="color: var(--color-charcoal-subtle);">Training Logged</td>
-                    </tr>
-                    <tr>
-                      <td class="mono"><strong>Round 7</strong></td>
-                      <td class="mono">0x8899b8acd7d57fa3...</td>
-                      <td><span class="badge badge-neutral">28.57%</span></td>
-                      <td>ε = 2.69</td>
-                      <td><span class="badge badge-success">Groth16 Valid</span></td>
-                      <td><span class="badge badge-success">Certified</span></td>
-                      <td style="color: var(--color-charcoal-subtle);">Training Logged</td>
-                    </tr>
-                    <tr>
-                      <td class="mono"><strong>Round 6</strong></td>
-                      <td class="mono">0x63b6d771552ea9dc...</td>
-                      <td><span class="badge badge-neutral">21.43%</span></td>
-                      <td>ε = 2.30</td>
-                      <td><span class="badge badge-success">Groth16 Valid</span></td>
-                      <td><span class="badge badge-success">Certified</span></td>
-                      <td style="color: var(--color-charcoal-subtle);">Training Logged</td>
+                      <td colspan="7" style="text-align: center; color: var(--color-charcoal-subtle); padding: 32px;">
+                        No supervisory certifications are available. Current metrics and proof status are recorded in the evaluation artifacts.
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -624,7 +584,7 @@
         <section id="reg-section-settings" class="reg-view-section" style="display: none;">
           <div class="view-header">
             <div class="view-heading">
-              <h1>Regulatory Authority Settings</h1>
+              <h1>Demo Observer Settings</h1>
               <p>Smart contract registry parameters and RPC oversight configurations.</p>
             </div>
             <div class="view-controls">
@@ -673,15 +633,15 @@
             <div class="card">
               <div class="card-header">
                 <h3 class="card-title">Consortium Quorum & SLA Policy</h3>
-                <span class="badge badge-success">4 / 4 Nodes Enforced</span>
+                <span class="badge badge-neutral">4 Simulated Clients</span>
               </div>
               <div class="card-body" style="display: flex; flex-direction: column; gap: 10px;">
                 <div class="config-item">
                   <div class="config-label-group">
                     <span class="config-title">Consensus Quorum</span>
-                    <span class="config-desc">Minimum participating bank silos per round</span>
+                    <span class="config-desc">Minimum simulated Flower clients per round</span>
                   </div>
-                  <span class="config-value">100% Quorum (4/4)</span>
+                  <span class="config-value">Configured minimum: 4 clients</span>
                 </div>
                 <div class="config-item">
                   <div class="config-label-group">

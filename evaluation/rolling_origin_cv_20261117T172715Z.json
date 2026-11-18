@@ -1,0 +1,186 @@
+{
+  "evaluation": "rolling_origin_outer_windows",
+  "run_id": "abc4b575614845cdb99a25f3f91aa979",
+  "raw_input": "C:\\Users\\keeru\\Capstone work\\project\\Verifiable-Federated-Intelligence\\Verifiable-Federated-Intelligence\\data\\amlnet.csv",
+  "original_final_test_excluded": true,
+  "folds_are_fresh_blind_holdouts": false,
+  "note": "Outer windows precede the saved final-test period and were each evaluated once after selecting round and threshold on that fold's earlier inner validation. These periods were used in earlier project development, so this is a temporal robustness check, not a fresh blind estimate.",
+  "model_configuration": {
+    "dp_enabled": true,
+    "noise_multiplier": 0.5,
+    "positive_loss_weight": 10.0,
+    "learning_rate": 0.002,
+    "local_epochs": 1,
+    "fedprox_mu": 0.0,
+    "rounds": 10,
+    "seed": 42
+  },
+  "fold_mean_f1": 0.6525310964149827,
+  "fold_sample_std_f1": 0.05695459918942775,
+  "fold_mean_average_precision": 0.6854561715812083,
+  "pooled_outer_confusion_metrics": {
+    "tp": 215,
+    "fp": 74,
+    "fn": 151,
+    "tn": 228495,
+    "precision": 0.7439446366782007,
+    "recall": 0.587431693989071,
+    "f1": 0.6564885496183206,
+    "confusion_matrix": [
+      [
+        228495,
+        74
+      ],
+      [
+        151,
+        215
+      ]
+    ]
+  },
+  "folds": [
+    {
+      "fold": 1,
+      "prefix_end_fraction": 0.6,
+      "prefix_max_timestamp": 1747972823.770518,
+      "prefix_max_utc": "2025-05-23T04:00:23.770518+00:00",
+      "timestamp_source": "metadata",
+      "run_id": "6eee4a030d8c47b0adf28d7a85eb9811",
+      "train_rows": 523284,
+      "train_positives": 873,
+      "inner_validation_rows": 65410,
+      "inner_validation_positives": 119,
+      "inner_validation_prevalence": 0.0018192936859807369,
+      "outer_test_rows": 65410,
+      "outer_test_positives": 79,
+      "outer_test_prevalence": 0.0012077663965754473,
+      "selected_round": 10,
+      "best_inner_validation_f1": 0.64,
+      "decision_threshold": 0.0081702321767807,
+      "max_client_epsilon": 8.944799205625399,
+      "metrics": {
+        "accuracy": 0.9993120317994191,
+        "precision": 0.7575757575757576,
+        "recall": 0.6329113924050633,
+        "f1": 0.6896551724137931,
+        "tp": 50,
+        "fp": 16,
+        "fn": 29,
+        "tn": 65315,
+        "positives": 79,
+        "negatives": 65331,
+        "support": 65410,
+        "prevalence": 0.0012077663965754473,
+        "confusion_matrix": [
+          [
+            65315,
+            16
+          ],
+          [
+            29,
+            50
+          ]
+        ],
+        "decision_threshold": 0.0081702321767807,
+        "auc": 0.9675988815668759,
+        "average_precision": 0.7438911366860468,
+        "split": "final_test_once"
+      }
+    },
+    {
+      "fold": 2,
+      "prefix_end_fraction": 0.7,
+      "prefix_max_timestamp": 1749553211.770518,
+      "prefix_max_utc": "2025-06-10T11:00:11.770518+00:00",
+      "timestamp_source": "metadata",
+      "run_id": "496749628fc34de8a6371b68c17e09f1",
+      "train_rows": 610497,
+      "train_positives": 1021,
+      "inner_validation_rows": 76312,
+      "inner_validation_positives": 90,
+      "inner_validation_prevalence": 0.0011793689065939827,
+      "outer_test_rows": 76312,
+      "outer_test_positives": 115,
+      "outer_test_prevalence": 0.0015069713806478667,
+      "selected_round": 10,
+      "best_inner_validation_f1": 0.6863905325443788,
+      "decision_threshold": 0.010943431407213211,
+      "max_client_epsilon": 8.435462370004426,
+      "metrics": {
+        "accuracy": 0.9990040884788762,
+        "precision": 0.782608695652174,
+        "recall": 0.46956521739130436,
+        "f1": 0.5869565217391305,
+        "tp": 54,
+        "fp": 15,
+        "fn": 61,
+        "tn": 76182,
+        "positives": 115,
+        "negatives": 76197,
+        "support": 76312,
+        "prevalence": 0.0015069713806478667,
+        "confusion_matrix": [
+          [
+            76182,
+            15
+          ],
+          [
+            61,
+            54
+          ]
+        ],
+        "decision_threshold": 0.010943431407213211,
+        "auc": 0.9573346776747458,
+        "average_precision": 0.6064626734254976,
+        "split": "final_test_once"
+      }
+    },
+    {
+      "fold": 3,
+      "prefix_end_fraction": 0.8,
+      "prefix_max_timestamp": 1751064065.770518,
+      "prefix_max_utc": "2025-06-27T22:41:05.770518+00:00",
+      "timestamp_source": "metadata",
+      "run_id": "f4ed405f0ea94d5c86fff578e226f93f",
+      "train_rows": 697711,
+      "train_positives": 1129,
+      "inner_validation_rows": 87214,
+      "inner_validation_positives": 142,
+      "inner_validation_prevalence": 0.001628178962093242,
+      "outer_test_rows": 87213,
+      "outer_test_positives": 172,
+      "outer_test_prevalence": 0.001972183046105512,
+      "selected_round": 9,
+      "best_inner_validation_f1": 0.7090301003344481,
+      "decision_threshold": 0.009909458458423615,
+      "max_client_epsilon": 8.008386499745605,
+      "metrics": {
+        "accuracy": 0.9988075172279361,
+        "precision": 0.7207792207792207,
+        "recall": 0.6453488372093024,
+        "f1": 0.6809815950920245,
+        "tp": 111,
+        "fp": 43,
+        "fn": 61,
+        "tn": 86998,
+        "positives": 172,
+        "negatives": 87041,
+        "support": 87213,
+        "prevalence": 0.001972183046105512,
+        "confusion_matrix": [
+          [
+            86998,
+            43
+          ],
+          [
+            61,
+            111
+          ]
+        ],
+        "decision_threshold": 0.009909458458423615,
+        "auc": 0.9893646752412588,
+        "average_precision": 0.7060147046320806,
+        "split": "final_test_once"
+      }
+    }
+  ]
+}

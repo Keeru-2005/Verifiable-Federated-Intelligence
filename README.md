@@ -1,54 +1,43 @@
 # Verifiable Federated Intelligence (VFI)
 
-VFI is a local proof of concept that combines transaction preprocessing, a Flower federated-learning loop over four simulated clients, DP-SGD client training, a narrowly scoped Groth16 aggregation proof, and smart-contract audit logging.
+VFI is a local proof of concept combining chronological transaction preprocessing, Flower federated training across four simulated clients, client DP-SGD, a narrow Groth16 aggregation check, and smart-contract audit logging. Pooled training rows are preprocessed centrally and randomized into client shards; this is not a deployment across independent banks.
 
-The prototype is not a deployment across real banks. Raw data are centrally preprocessed before the pooled training rows are randomized into four client shards. The current classifier is an MLP over 32 PCA-transformed graph-informed transaction features. The ZK circuit proves a sample-count-weighted relation for 33 quantized output-layer values; it does not prove full-model training or prediction accuracy.
+The feature pipeline uses a pooled train-only scaler/PCA projection with 32 inputs. The final model layer remains `Linear(32, 1)`, preserving the 33 quantized output parameters consumed by the Groth16 circuit. The proof constrains a sample-count-weighted relation and Poseidon commitment only; it does not prove complete model training or predictive accuracy.
 
-## Current evidence
+## Current results
 
-The original near-99.7% F1 figures came from a leaky pipeline and are invalid as generalization results. The current saved round-10 artifact reports **71.22% validation F1**. The saved final evaluation separately reports **67.88% final-test F1**. These numbers must not be interchanged. The split counts, confusion matrices, threshold, centralized baseline record, and artifact limitations are documented in [`docs/CURRENT_PIPELINE_RESULTS.md`](docs/CURRENT_PIPELINE_RESULTS.md).
+The chronological split is 763,121 train rows (1,226 positives), 109,017 validation rows (217 positives), and 218,034 test rows (302 positives). The four-run validation ablation's leading candidate, client-local SMOTE-Tomek, achieved validation F1 **0.751131** and PR-AUC **0.801182** at selected round 8. Its one-time test attempt is invalid because the saved round-8 model was evaluated with round-9 calibration thresholds; do not report or rerun that score.
 
-The current preprocessing manifest records 1,090,172 rows split chronologically into 763,121 train, 109,017 validation, and 218,034 test rows. Positive counts are 1,226, 217, and 302. Resampling is `none`. See [`data/preprocess_manifest.json`](data/preprocess_manifest.json) and [`docs/DATA_INTEGRITY.md`](docs/DATA_INTEGRITY.md).
+The valid one-time final-test result is the formal-DP BCE `pos_weight=25` candidate: validation F1 **0.716279** / AP **0.710067**, final-test F1 **0.679137** / AP **0.727406**, ROC-AUC 0.993317, precision 0.600509, recall 0.781457, TP/FP/FN/TN=236/157/66/217,575. It reports epsilon 7.75214 at delta 1e-5 with `standard_prng_demo_only` RNG. This dataset has been consulted during project iteration and is not a fresh blind publication estimate. Full results and limitations are in [`docs/CURRENT_PIPELINE_RESULTS.md`](docs/CURRENT_PIPELINE_RESULTS.md).
 
-## Run the prototype
+## Quick start
 
-Install Python dependencies from `requirements.txt`, root Node dependencies with `npm install`, and the blockchain dependencies from `blockchain/` as needed.
+Install Python dependencies from `requirements.txt`, root Node dependencies with `npm install`, and blockchain dependencies from `blockchain/` when running the chain tests.
 
-```bash
-# Preprocess the configured CSV (this overwrites generated split artifacts)
-python data/preprocess.py
-
-# Terminal 1: start the Flower server
-python fl_implementation/server.py --rounds 10 --min-clients 4
-
-# Terminal 2: start all four simulated clients in separate shells
-python fl_implementation/client.py --cid 1
-python fl_implementation/client.py --cid 2
-python fl_implementation/client.py --cid 3
-python fl_implementation/client.py --cid 4
+```powershell
+python data\preprocess.py
+python evaluation\diagnose_pipeline.py
+python evaluation\run_fl_validation_sweep.py --help
 ```
 
-The code supports a local blockchain demonstration through Hardhat and the scripts in `blockchain/`. See [`COMMANDS.md`](COMMANDS.md) for ordered commands and [`docs/RUNBOOK.md`](docs/RUNBOOK.md) for the demo workflow. A dataset download path has a mock-data fallback; verify the actual data source and checksum before reporting experimental results.
+For exact validation sweep, one-time finalization, ZK proof, and test commands, see [`COMMANDS.md`](COMMANDS.md). Inspect `data\preprocess_manifest.json` and confirm the actual dataset source; the download code may fall back to mock data.
 
-## Test suite
+## Privacy and interpretation
 
-Run the repository test command with `npm test` or the suites listed in `docs/TEST_RESULTS.md`. That document is a historical test record and includes some statements from an older SMOTE-era implementation. The current no-resampling implementation has not been revalidated as part of the current documentation update; do not use the old pass count as a fresh verification claim.
-
-## Privacy and proof scope
-
-- The client contains Opacus DP-SGD with gradient clipping and Gaussian noise. The saved final evaluation reports maximum client epsilon 11.13 at delta 1e-5 and RNG mode `standard_prng_demo_only`. This is a prototype setting, not production-secure randomness.
-- The proof circuit constrains a weighted-average relation and Poseidon commitment for 33 output-layer parameters. It does not establish training correctness, data integrity, model accuracy, or metric truthfulness.
-- The ledger records proof status, hashes, and metric metadata. The model hash and metric fields are not all constrained by the ZK proof.
-- Because data preparation is pooled and the client partitions are randomized, the prototype does not demonstrate end-to-end institutional data locality or realistic bank-specific non-IID learning.
+- The formal-DP candidate's epsilon is reported at delta=1e-5, but RNG mode `standard_prng_demo_only` is demonstrative, not a production-secure randomness claim.
+- The SMOTE-Tomek epsilon is nominal only and not a formal guarantee for original records because synthetic samples depend on private examples.
+- Four randomized shards and a shared centrally fitted projection do not establish institution-local data handling or realistic bank-specific non-IID behavior.
+- The circuit is limited to the weighted output-layer relation and commitment; metric values and model accuracy are not proved.
+- Accuracy is misleading under the approximately 0.14% test prevalence; consult confusion counts, precision, recall, F1, and average precision.
 
 ## Repository map
 
-- `data/` — input handling, causal transaction features, preprocessing manifest.
-- `models/` — PyTorch MLP classifier.
-- `fl_implementation/` — Flower server and client, simulated data shards.
-- `evaluation/` — saved validation sweeps and centralized comparison.
-- `zkp/` — Circom circuit and SnarkJS proof tools.
-- `blockchain/` — Solidity verifier/ledger, Hardhat scripts, and tests.
+- `data/` — source retrieval, causal feature engineering, train-only preprocessing and manifest.
+- `models/` — MLP with a fixed 32-to-1 output layer.
+- `fl_implementation/` — Flower client/server and training configuration.
+- `evaluation/` — diagnostics, validation sweeps, structured results, and candidate archives.
+- `zkp/` — Circom circuit, SnarkJS proof generation and verification.
+- `blockchain/` — Solidity verifier/ledger and Hardhat tests.
 - `dashboard/` — local Express API and demonstration UI.
-- `docs/` — runbook, integrity notes, project report, and result reconciliation.
-
+- `tests/` — Python and backend integration/unit tests.
+- `docs/` — data integrity, runbook, diagnostic, optimization, and test records.

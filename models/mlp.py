@@ -25,8 +25,9 @@ class ResidualMLPBlock(nn.Module):
 
 
 class GraphAwareMLP(nn.Module):
-    def __init__(self, input_dim=32):
+    def __init__(self, input_dim=32, dropout=0.1, return_logits=False):
         super(GraphAwareMLP, self).__init__()
+        self.return_logits = return_logits
 
         # The preprocessed inputs are standardized continuous features. A
         # compact residual representation keeps gradients useful across local
@@ -37,8 +38,8 @@ class GraphAwareMLP(nn.Module):
             nn.LayerNorm(64),
             nn.GELU(),
         )
-        self.residual_block1 = ResidualMLPBlock(width=64, dropout=0.1)
-        self.residual_block2 = ResidualMLPBlock(width=64, dropout=0.1)
+        self.residual_block1 = ResidualMLPBlock(width=64, dropout=dropout)
+        self.residual_block2 = ResidualMLPBlock(width=64, dropout=dropout)
         self.representation = nn.Sequential(
             nn.LayerNorm(64),
             nn.Linear(64, 32),
@@ -52,13 +53,16 @@ class GraphAwareMLP(nn.Module):
             nn.Sigmoid()
         )
 
-    def forward(self, x):
+    def forward_logits(self, x):
         x = self.input_projection(x)
         x = self.residual_block1(x)
         x = self.residual_block2(x)
         x = self.representation(x)
-        x = self.output_layer(x)
-        return x
+        return self.output_layer[0](x)
+
+    def forward(self, x):
+        logits = self.forward_logits(x)
+        return logits if self.return_logits else torch.sigmoid(logits)
 
     def get_parameters(self):
         """Extracts parameters as a list of independent numpy arrays for Federated Learning Aggregation."""

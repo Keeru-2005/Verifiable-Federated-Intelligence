@@ -4,8 +4,9 @@ These files are demonstration fixtures for the demo workflow. They are not the c
 
 Use the current saved pipeline records for performance statements:
 
-- `schemas/global_model_round_10.json` — round-10 validation result (71.22% F1).
-- `schemas/final_evaluation.json` — saved final-test result (67.88% F1).
-- `evaluation/comparison_results.json` — centralized result and federated validation history.
+- `evaluation/ablation_summary.md` — current validation candidates and valid final-test result.
+- `evaluation/finalized_candidates/bce_pos_weight_25_seed42/final_evaluation.json` — valid new final-test record.
+- `evaluation/finalized_candidates/smote_tomek_005_seed42/final_evaluation.json` — invalid test attempt retained only for audit; do not cite or rerun.
+- `evaluation/comparison_results.json` — historical centralized result and federated validation history.
 
 See `../../docs/CURRENT_PIPELINE_RESULTS.md` for split counts, confusion matrices, and claim limitations.

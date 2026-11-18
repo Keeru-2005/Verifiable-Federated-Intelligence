@@ -1,29 +1,42 @@
-# Test inventory and recorded test status
+# Test inventory and verified status
 
-## Status of this document
+**Last verified:** 2026-11-18 16:24 (+05:30), Windows, Python 3.12.6, Node 24.13.0, npm 11.6.2. The full suite was rerun after finalizer and dashboard API changes.
 
-This file is an inventory of test coverage and a record of previously reported test execution. The historical report recorded 50 tests passing (32 Python, 11 Hardhat, and 7 API tests). **That is not a fresh verification of the current working tree.** The current documentation update did not run tests.
+## Full repository test command
 
-Several test descriptions in the previous version referred to local SMOTE, while the current preprocessor manifest records `resampling: none` and the current client applies positive-class loss weighting. The test suite and this report should be rerun/reconciled against the current implementation before submission. Do not display the old “50 passed” number as a current test badge or assertion.
+The complete `npm test` orchestration passed when the project virtualenv was added to `PATH`:
 
-## Test areas present in the repository
-
-- Data preprocessing and split/feature integrity: `tests/test_data_preprocessing.py`
-- Model and federated client/server behavior: `tests/test_model_fl.py`
-- Proof input, generation, and verification: `tests/test_zk_snark.py`
-- Pipeline orchestration: `tests/test_e2e_pipeline.py`
-- Backend API behavior: `tests/test_backend_api.js`
-- Contract and EVM verifier behavior: `blockchain/test/AMLVerifier.test.js`
-
-## Run the tests and preserve evidence
-
-```bash
+```powershell
+Set-Location 'C:\Users\keeru\Capstone work\project\Verifiable-Federated-Intelligence\Verifiable-Federated-Intelligence'
+$env:PATH = "$PWD\capstone_env\Scripts;$env:PATH"
+$env:OMP_NUM_THREADS = '1'
+$env:MKL_NUM_THREADS = '1'
+$env:OPENBLAS_NUM_THREADS = '1'
+$env:NUMEXPR_NUM_THREADS = '1'
 npm test
 ```
 
-For mentor or paper review, save the actual command, environment/version details, start/end time, exit code, and complete terminal output. Record which tests were skipped and whether they run against synthetic fixtures or the full pipeline. Update this report only from that output.
+| Suite | Result |
+|---|---:|
+| Python / pytest | **48 passed**, 4 warnings |
+| Hardhat contracts | **11 passing** |
+| Backend API | **8 passed, 0 failed** |
+| Total | **67 passed**, 0 failures |
 
-## Important distinction
+The pytest run covered preprocessing, end-to-end pipeline, feature-representation comparison, model/FL behavior, optimization metrics (including rejection of mismatched validation checkpoint/threshold artifacts before test loading), and the isolated ZK-SNARK suite.
 
-Passing software tests can establish that specified code paths behave as expected on fixtures. They do not establish that AML metrics generalize, that client partitions represent independent institutions, that DP settings are production secure, or that the ZK circuit proves full model training. Current saved performance records and their scope are in `CURRENT_PIPELINE_RESULTS.md`.
+## Selected-checkpoint Groth16 proof
 
+A separate proof was generated from the server-selected validation-winning SMOTE-Tomek round-8 archived client update (`evaluation/finalized_candidates/smote_tomek_005_seed42/round_8.json`). The extractor validated 4 clients × 33 parameters and their sample-count-weighted aggregation for 639,989 total samples. Groth16 proof generation passed, its immediate local pairing verification passed, and the separate `zkp/verify_proof.js` verification passed. Proof, input, and context artifacts are isolated in the candidate's `proof_stage/` folder; no test data were accessed.
+
+The proof verifies only the circuit's weighted output-layer relation and commitment. It does not establish accuracy, training correctness, data integrity, or metric truthfulness.
+
+## Coverage and rerun commands
+
+- Python suite: `npm run test:python`
+- Hardhat suite: `npm run test:contracts`
+- Backend API suite: `npm run test:api`
+- Full orchestration: `npm test`
+- Selected archived proof flow: see `COMMANDS.md`
+
+The previous historical count of 50 tests is superseded by this fresh run. Passing tests establish the specified software behavior on the current test fixtures; they do not establish production privacy, independent-bank data locality, or generalization to an untouched dataset.

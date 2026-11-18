@@ -1,12 +1,8 @@
-# Data integrity and scope of the current pipeline
+# Data integrity and experimental scope
 
-## Historical issue
+## Current chronological split
 
-The original results near 99.7% F1 were produced by an earlier pipeline with leakage paths. The project record says graph features, a GAT encoder, and scaling/PCA were fitted using the full dataset before splitting, and SMOTE was applied before bank sharding. The old figures must not be cited as generalization performance. They are retained only as invalid historical results.
-
-## Current saved preprocessing protocol
-
-The current `causal-v3` manifest records a chronological whole-timestamp train/validation/test split before causal feature extraction. The recorded row counts are:
+The canonical manifest (`data/preprocess_manifest.json`) records the following chronological whole-timestamp partition, made before causal history features are generated:
 
 | Split | Rows | Positive | Negative |
 |---|---:|---:|---:|
@@ -15,27 +11,26 @@ The current `causal-v3` manifest records a chronological whole-timestamp train/v
 | Final test | 218,034 | 302 | 217,732 |
 | Total | 1,090,172 | 1,745 | 1,088,427 |
 
-The current manifest records `resampling: none`. The data preprocessing code extracts history-based transaction features and fits StandardScaler, PCA, and the post-PCA scaler on the train split. Validation and test rows are transformed without their labels. See `data/preprocess_manifest.json` and `data/preprocess.py`.
+StandardScaler, PCA, and the post-PCA scaler are fit on pooled training rows only. The resulting feature basis is retained as a **shared train-only projection** across four simulated horizontal-FL shards, which gives clients compatible feature coordinates. Preprocessing is centralized before sharding; the setup is not four independently operated bank pipelines. The manifest's canonical `resampling` value is `none`. The SMOTE-Tomek ablation applies sampling only inside a client's local training shard and not to validation or test rows.
 
-The four FL clients are simulated by shuffling the pooled training feature table and splitting it into four shards. Preprocessing is performed centrally before those shards are made. This is **not** a demonstration of four banks independently keeping raw data and constructing their own local features, nor does it model institutional non-IID partitions.
+The source loader can fall back to mock data if upstream retrieval fails. The manifest alone does not establish upstream provenance. Preserve the exact input dataset and checksum for any externally reported experiment.
 
-## Current model result records
+## Leakage controls and limitations
 
-The round-10 record in `schemas/global_model_round_10.json` is labeled `validation`. It reports F1 0.712195 (71.22%), precision 0.756477 (75.65%), recall 0.672811 (67.28%), AP 0.704183 (70.42%), and ROC-AUC 0.974145 on 217 positive and 108,800 negative validation rows. Its selected threshold is 0.003817 and confusion matrix is `[[108753, 47], [71, 146]]` in `[[TN, FP], [FN, TP]]` order.
+Validation data are used for checkpoint selection, temperature fitting, and threshold selection. They are never joined into training resampling. Test labels are excluded from model selection, calibration, and threshold selection. A final-test run is executed only for an explicitly selected frozen candidate.
 
-The current `schemas/final_evaluation.json` is a separate `final_test_once` record. It reports F1 0.678808 (67.88%), precision 0.678808, recall 0.678808, AP 0.716708, ROC-AUC 0.993869, and confusion matrix `[[217635, 97], [97, 205]]` on 302 positive and 217,732 negative test rows.
+Two approved candidates were evaluated once. The formal-DP `pos_weight=25` test result is valid. The SMOTE-Tomek evaluation used round-8 model weights with round-9 calibration thresholds; it is invalid, retained for audit only, and must not be rerun because the test partition was already read for that attempt. The physical test period has also been consulted during broader project iteration, so it is development evidence rather than a new blind estimate.
 
-Accordingly, **71.22% is the saved validation F1, not the saved final-test F1**. The current final-test artifact records 67.88%. A different run producing 71.22% on the test partition must be accompanied by a corresponding final-test JSON/log before it is described that way. The 73.29% from the 15-round sweep is also a validation result; that sweep contains no final-test evaluation.
+## Privacy and resampling
 
-The same physical test rows have been used during project iteration. Even though the current server code separates validation from the test evaluator, this dataset should be considered development evidence rather than a blind, one-time external estimate. A final submission should freeze the configuration on validation and evaluate once on a newly reserved later-period holdout.
+The formal-DP candidate reports Opacus epsilon=7.75214 at delta=1e-5 with `dp_rng_mode=standard_prng_demo_only`. This RNG setting is demonstrative and must not be described as production-secure randomness.
 
-## Privacy, client, and proof scope
+For SMOTE-Tomek, synthetic samples are functions of private examples. The reported Opacus epsilon=7.17958 is nominal only and is **not a formal DP guarantee for original records** without an accounting argument that includes the resampling mechanism.
 
-- Client training uses Opacus DP-SGD. The saved final evaluation reports maximum client epsilon 11.13 at delta 1e-5, with RNG mode `standard_prng_demo_only`. This does not support a claim of production-secure random-number generation. Preserve noise multiplier, clip norm, sampling, number of steps, accountant state scope, and seed/configuration per run.
-- The circuit proves a sample-count-weighted aggregation relation for 33 quantized output-layer values and a Poseidon commitment. It does not prove full-model aggregation, correct local training, raw-data integrity, model accuracy, or metric truthfulness.
-- The blockchain record includes model hashes and performance metrics as metadata; these values are not all constrained by the ZK circuit.
-- The dataset retriever may use a mock-data fallback if upstream retrieval fails. Record the exact input source and a checksum for any experiment reported externally.
+## Proof scope
 
-## Historical documents
+The Groth16 circuit proves the sample-count-weighted relation and Poseidon commitment for 33 quantized output-layer parameters (32 weights and one bias from `Linear(32, 1)`). It does not prove complete model aggregation, client training correctness, source-data integrity, model accuracy, or metric truthfulness. Contract-side metrics and model hashes are metadata unless separately constrained by the circuit.
 
-Some older documents describe an 80/20 train/holdout protocol, local SMOTE, GAT fitting, 349 test positives, or F1 0.6169. Those refer to older experiment records and must not be mixed with the current manifest and result files. `docs/CURRENT_PIPELINE_RESULTS.md` is the concise current artifact index.
+## Historical records
+
+Near-99.7% F1 results from the earlier leaky feature/transformation/resampling pipeline are invalid. Older saved schemas and documents may contain historical baseline values; the authoritative current candidate status and metric separation are in `CURRENT_PIPELINE_RESULTS.md` and `evaluation/ablation_summary.md`.

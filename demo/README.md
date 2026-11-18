@@ -12,7 +12,7 @@ The demo scripts exercise the local workflow: inspect preprocessed artifacts, ru
 
 ## Current result artifacts
 
-The saved round-10 result is **71.22% validation F1**, with 75.65% precision, 67.28% recall, and 70.42% AP on 217 positives and 108,800 negatives. The current saved final-test record is **67.88% F1**, with 67.88% precision and recall, 71.67% AP, and 302 positives / 217,732 negatives. See [`../docs/CURRENT_PIPELINE_RESULTS.md`](../docs/CURRENT_PIPELINE_RESULTS.md). The previous near-99.7% F1 results are invalidated leakage-era metrics.
+The best current validation candidate is client-local SMOTE-Tomek (0.05), with validation F1 0.751131/AP 0.801182 at round 8. Its one-time final-test attempt is invalid due to mismatched checkpoint and calibration thresholds. The only valid new final-test result is the BCE `pos_weight=25` candidate: F1 0.679137 and AP 0.727406. See [`../docs/CURRENT_PIPELINE_RESULTS.md`](../docs/CURRENT_PIPELINE_RESULTS.md). The previous near-99.7% F1 results are invalid leakage-era metrics.
 
 ## Run
 

@@ -8,6 +8,8 @@
 > below are contemporaneous sprint notes, not independently verified measurements or a
 > specification of the present implementation. In particular, historical SMOTE, GAT,
 > bank-locality, test, and dataset-download statements must not be used as current claims.
+> Current metrics, data counts, privacy caveats, and the invalid SMOTE-Tomek final-test
+> attempt are recorded in [`CURRENT_PIPELINE_RESULTS.md`](CURRENT_PIPELINE_RESULTS.md).
 
 This document preserves the team's Sprint 1 summary. The present repository state does not establish that every listed item was completed, tested, or committed on the named branch.
 

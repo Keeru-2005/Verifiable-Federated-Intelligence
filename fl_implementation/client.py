@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
@@ -40,6 +41,35 @@ CLIENT_LEARNING_RATE = float(os.getenv("CLIENT_LEARNING_RATE", "0.002"))
 LOCAL_EPOCHS = int(os.getenv("LOCAL_EPOCHS", "1"))
 FEDPROX_MU = float(os.getenv("FEDPROX_MU", "0.0"))
 DP_ACCOUNTANT_TAG = os.getenv("DP_ACCOUNTANT_TAG", "default")
+LOSS_TYPE = os.getenv("LOSS_TYPE", "bce").lower()
+RESAMPLING = os.getenv("RESAMPLING", "none").lower()
+SMOTE_STRATEGY = float(os.getenv("SMOTE_STRATEGY", "0.05"))
+FOCAL_ALPHA = float(os.getenv("FOCAL_ALPHA", "0.75"))
+FOCAL_GAMMA = float(os.getenv("FOCAL_GAMMA", "2.0"))
+MODEL_DROPOUT = float(os.getenv("MODEL_DROPOUT", "0.1"))
+
+
+def per_example_loss(logits, targets, loss_type=LOSS_TYPE,
+                     positive_weight=POSITIVE_LOSS_WEIGHT,
+                     focal_alpha=FOCAL_ALPHA, focal_gamma=FOCAL_GAMMA):
+    """Return one numerically stable loss value per example for Opacus."""
+    targets = targets.reshape_as(logits)
+    if loss_type == "bce":
+        weight = torch.as_tensor(
+            positive_weight, dtype=logits.dtype, device=logits.device
+        )
+        return F.binary_cross_entropy_with_logits(
+            logits, targets, reduction="none", pos_weight=weight
+        ).reshape(-1)
+    if loss_type == "focal":
+        if not 0.0 <= focal_alpha <= 1.0 or focal_gamma < 0:
+            raise ValueError("Focal alpha must be in [0, 1] and gamma non-negative.")
+        bce = F.binary_cross_entropy_with_logits(logits, targets, reduction="none")
+        probabilities = torch.sigmoid(logits)
+        p_t = probabilities * targets + (1.0 - probabilities) * (1.0 - targets)
+        alpha_t = focal_alpha * targets + (1.0 - focal_alpha) * (1.0 - targets)
+        return (alpha_t * (1.0 - p_t).pow(focal_gamma) * bce).reshape(-1)
+    raise ValueError(f"Unsupported LOSS_TYPE: {loss_type!r}. Use 'bce' or 'focal'.")
 
 
 def compute_dp_budget(n_samples, batch_size, epochs, noise_multiplier, delta=DP_DELTA):
@@ -93,7 +123,9 @@ def _load_privacy_accountant_state(accountant, path):
 
 
 def _load_manifest():
-    manifest_path = os.path.join(project_root, "data", "preprocess_manifest.json")
+    manifest_path = os.environ.get("VFI_MANIFEST_PATH") or os.path.join(
+        project_root, "data", "preprocess_manifest.json"
+    )
     if not os.path.exists(manifest_path):
         return {}
     try:
@@ -173,6 +205,27 @@ class AMLClient(fl.client.NumPyClient):
         self.train_dataset = TensorDataset(self.X_train, self.y_train)
         self.test_dataset = TensorDataset(self.X_test, self.y_test)
 
+        if RESAMPLING not in ("none", "smote_tomek"):
+            raise ValueError(
+                f"Unsupported RESAMPLING: {RESAMPLING!r}. "
+                "Use 'none' or 'smote_tomek'."
+            )
+        if RESAMPLING == "smote_tomek":
+            if not 0.0 < SMOTE_STRATEGY < 1.0:
+                raise ValueError("SMOTE_STRATEGY must be between 0 and 1.")
+            from imblearn.combine import SMOTETomek
+            from imblearn.over_sampling import SMOTE
+            from imblearn.under_sampling import TomekLinks
+
+            sampler = SMOTETomek(
+                smote=SMOTE(sampling_strategy=SMOTE_STRATEGY, random_state=SEED),
+                tomek=TomekLinks(),
+            )
+            X_train, y_train = sampler.fit_resample(X_train, y_train)
+            self.X_train = torch.tensor(X_train, dtype=torch.float32)
+            self.y_train = torch.tensor(y_train, dtype=torch.float32)
+            self.train_dataset = TensorDataset(self.X_train, self.y_train)
+
         self.batch_size = 256
         drop_last = False
         self.train_loader = DataLoader(
@@ -182,7 +235,11 @@ class AMLClient(fl.client.NumPyClient):
         self.test_loader = DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False)
 
         self.input_dim = self.X_train.shape[1]
-        self.model = GraphAwareMLP(input_dim=self.input_dim)
+        self.model = GraphAwareMLP(
+            input_dim=self.input_dim,
+            dropout=MODEL_DROPOUT,
+            return_logits=True,
+        )
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
@@ -207,8 +264,11 @@ class AMLClient(fl.client.NumPyClient):
             self.privacy_engine = PrivacyEngine(accountant="rdp")
             run_id = _load_manifest().get("run_id", "untracked-run")
             safe_tag = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in DP_ACCOUNTANT_TAG)
+            privacy_state_dir = os.environ.get("VFI_PRIVACY_STATE_DIR") or current_dir
+            os.makedirs(privacy_state_dir, exist_ok=True)
             self.privacy_state_path = os.path.join(
-                current_dir, f"privacy_accountant_{run_id}_{safe_tag}_{self.client_id}.json"
+                privacy_state_dir,
+                f"privacy_accountant_{run_id}_{safe_tag}_{self.client_id}.json",
             )
             if os.path.exists(self.privacy_state_path):
                 _load_privacy_accountant_state(
@@ -241,7 +301,6 @@ class AMLClient(fl.client.NumPyClient):
         # value exactly recovers the existing local objective (FedAvg clients).
         global_parameters = [parameter.detach().clone() for parameter in self.model.parameters()]
         self.fit_rounds += 1
-        criterion = nn.BCELoss(reduction="none")
         optimizer = self.private_optimizer if ENABLE_DP else optim.Adam(
             self.model.parameters(), lr=CLIENT_LEARNING_RATE
         )
@@ -256,18 +315,17 @@ class AMLClient(fl.client.NumPyClient):
                 X_batch, y_batch = X_batch.to(self.device), y_batch.to(self.device)
 
                 optimizer.zero_grad()
-                outputs = training_model(X_batch).squeeze()
+                logits = training_model(X_batch).squeeze()
 
-                if outputs.dim() == 0:
-                    outputs = outputs.unsqueeze(0)
+                if logits.dim() == 0:
+                    logits = logits.unsqueeze(0)
 
-                per_example_loss = criterion(outputs, y_batch)
-                weights = torch.where(
-                    y_batch > 0.5,
-                    torch.full_like(y_batch, POSITIVE_LOSS_WEIGHT),
-                    torch.ones_like(y_batch),
+                per_sample_loss = per_example_loss(
+                    logits,
+                    y_batch,
+                    loss_type=LOSS_TYPE,
+                    positive_weight=POSITIVE_LOSS_WEIGHT,
                 )
-                weighted_loss = per_example_loss * weights
                 if FEDPROX_MU > 0:
                     proximal_penalty = sum(
                         torch.sum((parameter - reference) ** 2)
@@ -275,8 +333,8 @@ class AMLClient(fl.client.NumPyClient):
                     )
                     # Add the same proximal term to each per-example loss so
                     # Opacus can still clip per-sample gradients correctly.
-                    weighted_loss = weighted_loss + (0.5 * FEDPROX_MU * proximal_penalty)
-                loss = weighted_loss.mean()
+                    per_sample_loss = per_sample_loss + (0.5 * FEDPROX_MU * proximal_penalty)
+                loss = per_sample_loss.mean()
                 loss.backward()
                 optimizer.step()
 
@@ -284,10 +342,21 @@ class AMLClient(fl.client.NumPyClient):
             "dp_enabled": ENABLE_DP,
             "dp_delta": DP_DELTA if ENABLE_DP else 0.0,
             "dp_accountant": "rdp" if ENABLE_DP else "disabled",
+            "dp_noise_multiplier": DP_NOISE_MULTIPLIER if ENABLE_DP else 0.0,
+            "dp_max_grad_norm": DP_CLIP_NORM if ENABLE_DP else 0.0,
             # Opacus secure_mode is intentionally not enabled for this local PoC
             # because it requires the optional torchcsprng package. Do not present
             # this run as production-grade privacy protection.
             "dp_rng_mode": "standard_prng_demo_only" if ENABLE_DP else "disabled",
+            "dp_accounting_validity": (
+                "not_formally_valid_for_original_records_after_synthetic_resampling"
+                if ENABLE_DP and RESAMPLING != "none"
+                else "standard_opacus_accounting"
+                if ENABLE_DP
+                else "disabled"
+            ),
+            "loss_type": LOSS_TYPE,
+            "resampling": RESAMPLING,
         }
         if ENABLE_DP:
             # Flower's metric records cannot contain None values. Omit epsilon
@@ -302,8 +371,13 @@ class AMLClient(fl.client.NumPyClient):
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
 
-        criterion = nn.BCELoss()
-        avg_loss, auc, f1, acc = self.model.evaluate(self.test_loader, criterion, self.device)
+        self.model.return_logits = False
+        try:
+            avg_loss, auc, f1, acc = self.model.evaluate(
+                self.test_loader, nn.BCELoss(), self.device
+            )
+        finally:
+            self.model.return_logits = True
 
         self.model.eval()
         y_true = []

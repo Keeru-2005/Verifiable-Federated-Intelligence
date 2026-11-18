@@ -54,6 +54,56 @@ def test_model_input_output_shapes():
     out = model(x)
     assert out.shape == (batch_size, 1), f"Expected shape ({batch_size}, 1), got {out.shape}"
     assert torch.all(out >= 0.0) and torch.all(out <= 1.0), "Outputs must be in [0, 1] range"
+    assert model.output_layer[0].weight.shape == (1, 32)
+    assert model.output_layer[0].bias.shape == (1,)
+
+
+def test_federated_selection_uses_average_precision_and_stops_on_patience():
+    from fl_implementation.server import EarlyStoppingFedAvg
+    from flwr.common import ndarrays_to_parameters, FitRes, Status, Code
+    from unittest.mock import MagicMock
+
+    scores = iter((0.70, 0.699, 0.698))
+
+    def evaluate_fn(_round, _parameters, _config):
+        return 0.0, {
+            "f1": 0.4,
+            "average_precision": next(scores),
+            "decision_threshold": 0.2,
+            "calibrated_threshold": 0.3,
+            "temperature": 1.5,
+            "precision": 0.7,
+            "recall": 0.3,
+            "accuracy": 0.99,
+            "auc": 0.9,
+            "tp": 3,
+            "fp": 1,
+            "fn": 7,
+            "tn": 90,
+            "split": "validation",
+        }
+
+    strategy = EarlyStoppingFedAvg(
+        target_rounds=5, patience=2, evaluate_fn=evaluate_fn
+    )
+    client = MagicMock()
+    client.cid = "test_client"
+    parameters = ndarrays_to_parameters(GraphAwareMLP(input_dim=32).get_parameters())
+    fit_result = FitRes(
+        status=Status(code=Code.OK, message="ok"),
+        parameters=parameters,
+        num_examples=10,
+        metrics={},
+    )
+
+    strategy.aggregate_fit(1, [(client, fit_result)], [])
+    strategy.aggregate_fit(2, [(client, fit_result)], [])
+    strategy.aggregate_fit(3, [(client, fit_result)], [])
+
+    assert strategy.best_round == 1
+    assert strategy.best_average_precision == 0.70
+    assert strategy.early_stopped
+    assert strategy.configure_fit(4, parameters, MagicMock()) == []
 
 
 def test_model_parameter_serialization_roundtrip():

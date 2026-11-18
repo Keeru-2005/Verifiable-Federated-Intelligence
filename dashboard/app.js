@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --------------------------------------------------------------------------
   // --------------------------------------------------------------------------
-  // Financial Institution Workspace Sync
+  // Simulated Client Workspace Sync
   // --------------------------------------------------------------------------
   async function syncInstitutionView() {
     try {
@@ -277,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <td>${((m.precision || 0) * 100).toFixed(2)}%</td>
           <td>${((m.recall || 0) * 100).toFixed(2)}%</td>
           <td><span class="badge badge-forest">${(m.f1 || 0).toFixed(4)}</span></td>
-          <td><span class="badge badge-neutral">${r.client_count || 4} Silos</span></td>
+          <td><span class="badge badge-neutral">${r.client_count || 4} Clients</span></td>
           <td style="color: var(--color-charcoal-subtle);">${dateStr}</td>
         </tr>
       `;

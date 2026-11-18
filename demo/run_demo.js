@@ -4,10 +4,9 @@
  * ============================================================================
  * Verifiable Federated Intelligence (VFI) — 80% Milestone Review Demonstration
  * ============================================================================
- * Clean demonstration of the 80% verified pipeline:
- * AML Data -> Preprocessing+SMOTE -> Graph Features & GAT -> 4 Banks -> FL ->
- * Global GraphAwareMLP -> ZK Proof Generation -> Dual Cryptographic Verification ->
- * On-Chain Smart Contract Logging -> Calibrated Privacy (DP-SGD) -> Dual Dashboards
+ * Local prototype demonstration:
+ * Chronological preprocessing -> shared train-only projection -> four simulated clients ->
+ * MLP training artifacts -> scoped ZK aggregation proof -> local ledger/dashboard demo.
  */
 
 const fs = require('fs');
@@ -70,7 +69,7 @@ async function runDemo() {
         info('AMLNet transaction dataset partition identified.');
     }
     success('StandardScaler + PCA fitted on the training split only (32 components)');
-    success('SMOTE is applied per client to local training rows only; bank shards and holdout stay natural (pre-SMOTE)');
+    success('Canonical preprocessing uses no resampling; the optional SMOTE-Tomek ablation is client-training-only');
     await sleep(500);
 
     // ------------------------------------------------------------------------
@@ -79,39 +78,39 @@ async function runDemo() {
     section('2', 'GRAPH FEATURE EXTRACTION');
     info('NetworkX graph conversion: temporal bipartite transaction graph');
     success('Graph topological features extracted: PageRank, clustering coefficients, node degrees');
-    success('GAT node embeddings integrated for transaction risk scoring');
+    success('The FL classifier consumes 32 transformed graph-informed features through an MLP (no GAT message passing)');
 
     const bankDir = path.join(PROJECT_ROOT, 'fl_implementation', 'data');
     const bankFiles = ['bank_1.csv', 'bank_2.csv', 'bank_3.csv', 'bank_4.csv'];
 
-    console.log('\n  Four Decentralized Bank Data Silos:');
+    console.log('\n  Four Simulated Client Shards:');
     for (let i = 0; i < bankFiles.length; i++) {
         const shardPath = path.join(bankDir, bankFiles[i]);
         if (fs.existsSync(shardPath)) {
             const sizeMB = (fs.statSync(shardPath).size / 1024 / 1024).toFixed(1);
-            success(`Bank ${String.fromCharCode(65 + i)} Silo: fl_implementation/data/${bankFiles[i]} (natural training shard | ${sizeMB} MB)`);
+            success(`Client ${String.fromCharCode(65 + i)} shard: fl_implementation/data/${bankFiles[i]} (centrally preprocessed training data | ${sizeMB} MB)`);
         }
     }
     const holdoutPath = path.join(bankDir, 'global_test.csv');
     if (fs.existsSync(holdoutPath)) {
-        success('Global Holdout Evaluation Set: fl_implementation/data/global_test.csv (untouched, naturally imbalanced)');
+        success('Chronological final-test partition is separate from training; this period has been consulted during project iteration');
     }
-    info('Privacy Guarantee: Raw transactions remain strictly local within bank silos.');
+    info('Data scope: preprocessing is pooled and the clients are simulated; institution-locality is not demonstrated.');
     await sleep(500);
 
     // ------------------------------------------------------------------------
     // [3] FOUR-BANK FEDERATED LEARNING
     // ------------------------------------------------------------------------
-    section('3', 'FOUR-BANK FEDERATED LEARNING');
+    section('3', 'FOUR-CLIENT SIMULATED FEDERATED LEARNING');
     info('Framework: Flower (flwr) Client/Server Architecture');
     info('Strategy: EarlyStoppingFedAvg (Patience = 2, Delta = 0.0002)');
-    info('Federated Quorum: 4 out of 4 Bank Nodes required per training round');
+    info('Client configuration: four simulated clients; this is not an institutional quorum or Byzantine guarantee');
 
-    console.log('\n  Simulated Bank Nodes Status:');
-    console.log(`  ${GREEN}*${RESET} Bank A (Client 1) : Connected & Training locally`);
-    console.log(`  ${GREEN}*${RESET} Bank B (Client 2) : Connected & Training locally`);
-    console.log(`  ${GREEN}*${RESET} Bank C (Client 3) : Connected & Training locally`);
-    console.log(`  ${GREEN}*${RESET} Bank D (Client 4) : Connected & Training locally`);
+    console.log('\n  Simulated Client Status:');
+    console.log(`  ${GREEN}*${RESET} Simulated Client 1 : Connected`);
+    console.log(`  ${GREEN}*${RESET} Simulated Client 2 : Connected`);
+    console.log(`  ${GREEN}*${RESET} Simulated Client 3 : Connected`);
+    console.log(`  ${GREEN}*${RESET} Simulated Client 4 : Connected`);
     console.log(`  ${GREEN}*${RESET} Flower Server     : Aggregating model weights on 0.0.0.0:8080`);
     await sleep(500);
 
@@ -119,7 +118,7 @@ async function runDemo() {
     // [4] GLOBAL MODEL
     // ------------------------------------------------------------------------
     section('4', 'GLOBAL MODEL');
-    info('Neural Network: PyTorch GraphAwareMLP (GNN-enriched binary classifier)');
+    info('Neural Network: PyTorch MLP over 32 transformed features (final layer 32 -> 1)');
 
     // Dynamically read real round JSONs from schemas/
     const roundFiles = fs.readdirSync(SCHEMAS_DIR)
@@ -167,12 +166,12 @@ async function runDemo() {
         console.log(`  ${DIM}----------------------------------------------------------------------${RESET}`);
     }
 
-    console.log(`\n  [RESULT] ${BOLD}Leak-free holdout metrics (centralized_untouched_holdout):${RESET}`);
+    console.log(`\n  [RESULT] ${BOLD}Saved per-round validation metrics (not final-test metrics):${RESET}`);
     console.log(`     Accuracy  : ${GREEN}${BOLD}${finalAccuracy}${RESET}`);
     console.log(`     F1 Score  : ${GREEN}${BOLD}${finalF1}${RESET}`);
     console.log(`     Recall    : ${GREEN}${BOLD}${finalRecall}${RESET}`);
     console.log(`     Precision : ${GREEN}${BOLD}${finalPrecision}${RESET}`);
-    console.log(`     ${DIM}Counts and confusion matrix are in schemas/global_model_round_*.json.${RESET}`);
+    console.log(`     ${DIM}Counts and confusion matrices are in schemas/global_model_round_*.json.${RESET}`);
     console.log(`     ${DIM}No fixed headline score is hardcoded: the old 99.67% figure was invalidated by target leakage.${RESET}`);
 
     const checkpointPath = path.join(PROJECT_ROOT, 'fl_implementation', 'model.pt');
@@ -251,8 +250,8 @@ async function runDemo() {
     // [8] ON-CHAIN BLOCKCHAIN AUDIT LOGGING
     // ------------------------------------------------------------------------
     section('8', 'ON-CHAIN BLOCKCHAIN AUDIT LOGGING');
-    info('Executing verifiable audit trail submission to Polygon Amoy Testnet...');
-    info('Target Contracts: AMLVerifier.sol (0x7F16...C830) & Groth16Verifier.sol on Polygon Amoy');
+    info('Attempting audit-record submission through the configured Hardhat network...');
+    info('Target contracts are local demo artifacts unless an external network is explicitly configured.');
     info('Logging verified round metadata: roundId, f1_score, accuracy, clientCount, modelWeightsHash, circuitHash');
 
     try {
@@ -284,42 +283,42 @@ async function runDemo() {
     info('Evaluating calibrated Differential Privacy (DP-SGD) bounds on model updates...');
     success('Gradient Norm Clipping applied: C = 1.0 (prevents outlier parameter influence)');
     success('Calibrated Gaussian Noise Perturbation: σ = 0.5 injected into aggregated tensors');
-    success('Formal Privacy Budget Accounting: ε = 3.84, δ = 1e-5 (Strong (ε, δ)-DP guarantee)');
-    success('Data Locality: Zero customer transaction records or PII leave bank perimeter');
+    success('Formal-DP candidate record: ε = 7.75214 at δ = 1e-5; RNG is standard_prng_demo_only');
+    info('SMOTE-Tomek epsilon is nominal only; it is not formal DP for original records.');
+    info('No production-secure randomness or institution-local data residency claim is made.');
     await sleep(500);
 
     // ------------------------------------------------------------------------
     // [10] DUAL-ROLE LIVE DASHBOARDS
     // ------------------------------------------------------------------------
     section('10', 'DUAL-ROLE LIVE WEB DASHBOARDS');
-    info('Express API server providing real-time Bank Admin and Regulator audit interfaces:');
+    info('Express API server providing local simulated-client and demo-observer views:');
     console.log(`
-  [BANK] ${BOLD}Bank Admin View:${RESET}      ${CYAN}http://localhost:3000${RESET}
-     - Displays current FL round, global F1 score, model accuracy, and 4-bank node health.
+  [CLIENT] ${BOLD}Simulated Client View:${RESET} ${CYAN}http://localhost:3000${RESET}
+     - Displays saved validation rounds, the valid final-test record, and four simulated clients.
      - Centralized vs Federated accuracy comparison chart (/visualizations/baseline_vs_federated.png).
 
-  [REGULATOR] ${BOLD}Regulator View:${RESET}       ${CYAN}http://localhost:3000/regulator.html${RESET}
-     - Displays cryptographic verification events, round ID, model weight hashes, and immutable blockchain ledger logs.
+  [DEMO] ${BOLD}Observer View:${RESET}           ${CYAN}http://localhost:3000/regulator.html${RESET}
+     - Shows local demonstration records; it does not provide regulatory certification.
 
   ${DIM}To launch the dashboard server, run: ${RESET}${BOLD}npm run dashboard${RESET}${DIM} (or: ${RESET}${BOLD}cd dashboard && npm start${RESET}${DIM})${RESET}
 `);
 
-    banner('[TARGET] MILESTONE ATTAINED: 80% WORK COMPLETED & DEMONSTRATED');
+    banner('[TARGET] LOCAL VFI PROTOTYPE DEMONSTRATION COMPLETE');
     console.log(`
-  ${BOLD}"80% of the Verifiable Federated Intelligence (VFI) platform is fully operational, integrating decentralized FL, graph neural networks, zero-knowledge proofs, on-chain smart contract verification, differential privacy, and real-time regulatory compliance."${RESET}
+  ${BOLD}"This local demonstration connects simulated federated training artifacts, a narrowly scoped ZK aggregation proof, and a development ledger/dashboard."${RESET}
 
-  ${GREEN}${BOLD}COMPLETED & DEMONSTRATED TODAY (80% SCOPE):${RESET}
-    ${GREEN}[OK]${RESET} [1] Data Preprocessing: train-only graph/scaler/PCA fitting, natural shards (SMOTE applied per client)
-    ${GREEN}[OK]${RESET} [2] Graph Topological Feature Extraction: Temporal graph PageRank, node degrees, clustering coefficients
-    ${GREEN}[OK]${RESET} [3] Graph Neural Network Integration: GAT fit on training labels only, frozen for holdout transform
-    ${GREEN}[OK]${RESET} [4] 4-Bank Decentralized Federated Learning: Flower client/server architecture with EarlyStoppingFedAvg
-    ${GREEN}[OK]${RESET} [5] Leak-Free Holdout Evaluation: counts + confusion matrix per round; full-scale rerun completed (best F1 0.6169)
+  ${GREEN}${BOLD}DEMONSTRATED PROTOTYPE COMPONENTS:${RESET}
+    ${GREEN}[OK]${RESET} [1] Data preprocessing: chronological split and train-only shared scaler/PCA projection
+    ${GREEN}[OK]${RESET} [2] Graph-informed feature construction followed by a 32-feature MLP classifier
+    ${GREEN}[OK]${RESET} [3] Four simulated Flower clients with validation-based checkpoint selection
+    ${GREEN}[OK]${RESET} [4] Separate validation and final-test evaluation records; invalid attempts are excluded
     ${GREEN}[OK]${RESET} [6] Neural Parameter Quantization: Fixed-point field element transformation (1e6 scale, 2^32 offset)
     ${GREEN}[OK]${RESET} [7] ZK Proof Generation: Circom circuit with Poseidon cryptographic hash commitment (~3 s proving; 1.7-4.0 s measured)
     ${GREEN}[OK]${RESET} [8] Dual-Layer ZK Verification: snarkjs pairing validation & EVM Groth16Verifier alt_bn128 precompile checks
-    ${GREEN}[OK]${RESET} [9] On-Chain Blockchain Auditability: Immutable round logging on Polygon Amoy (AMLVerifier.sol)
-    ${GREEN}[OK]${RESET} [10] Differential Privacy Baseline: (ε, δ)-DP gradient norm clipping & calibrated Gaussian noise bounds
-    ${GREEN}[OK]${RESET} [11] Live Dual-Role Web Dashboards: Bank Admin control center & Regulator compliance audit ledger
+    ${GREEN}[OK]${RESET} [9] Local EVM/Hardhat verifier and audit-record demonstration
+    ${GREEN}[OK]${RESET} [10] Opacus DP-SGD accounting with a demo-only RNG caveat
+    ${GREEN}[OK]${RESET} [11] Local simulated-client and demo-observer dashboards
 
   ${YELLOW}${BOLD}REMAINING WORK FOR FINAL 100% SUBMISSION (FINAL 20%):${RESET}
     ${YELLOW}•${RESET} Real-Time Streaming Ingestion: Apache Kafka / WebSocket continuous transaction streaming between banks
